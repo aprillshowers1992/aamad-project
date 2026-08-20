@@ -5,200 +5,144 @@
 **Phase:** Define
 **Intended path:** `project-context/1.define/prd.md`
 **Product:** Automated Employee Onboarding Workflow
-**Target organization:** AI Engineering
+**Target organization:** AI Engineering (internal)
 **Supported roles:** UI Designer, UX Researcher, Product Manager, Developer, Engineer
-**Selected runtime:** CrewAI
-**MVP interface:** Command-line interface
-**Status:** Development handoff candidate, subject to task-catalog population
+**MVP interface:** Command-line interface (`onboard`)
+**Status:** Template-aligned PRD; development handoff candidate, subject to task-catalog population
+
+## Context & Instructions
+
+This PRD defines MVP product requirements for a multi-agent onboarding-plan generator. Product scope is plan generation and validation from an authoritative task catalog—not live HR execution, provisioning, or progress tracking.
+
+## Input Requirements
+
+**Deep Research Report / MRD:** `project-context/1.define/mrd.md` (completed; not skipped)
+**System Description:** N/A — `project-context/1.define/system-description.md` is not present
+**System Concept:** Crew-orchestrated, catalog-authoritative generation of role-aware 30/60/90-day onboarding plans and manager checklists for five AI Engineering roles
+**Selected Runtime:** `crewai` (resolved from `aamad.config.yml` `runtime.target`; `AAMAD_TARGET_RUNTIME` unset)
+**Prior PRD (preserved for comparison):** `project-context/1.define/prd-2026-08-09.md` — this template-aligned document keeps that MVP scope and incorporates 2026-08-19 stakeholder decisions recorded in `project-context/1.define/sad.md`
 
 ---
 
 # 1. Executive Summary
 
-## 1.1 Problem Statement
+## Problem Statement
 
-The AI Engineering organization requires a repeatable way to generate structured employee onboarding plans for five roles:
+The AI Engineering organization lacks a repeatable way to generate consistent employee onboarding plans for five roles: UI Designer, UX Researcher, Product Manager, Developer, and Engineer.
 
-* UI Designer
-* UX Researcher
-* Product Manager
-* Developer
-* Engineer
+External research in the MRD supports the general problem: Gallup reports that only **12%** of employees strongly agree their organization does a great job of onboarding; BambooHR found **70%** of new hires decide fit within the first month and **44%** report regrets within the first week. SHRM notes fragmented ownership and recommends role-tailored onboarding rather than one generic checklist. These figures validate the problem class; they are **not** measured outcomes for this organization (MRD A11).
 
-The workflow must combine organization-wide onboarding requirements with role-specific enablement requirements and sequence them consistently into a 30/60/90-day onboarding structure.
+Internal impact is operational, not market-revenue: required compliance or provisioning tasks can be omitted, role-specific work can be sequenced incorrectly, and an AI system can invent onboarding requirements that do not exist in an approved source. That last risk is the primary product risk.
 
-The primary product risk is inconsistency: required compliance or provisioning tasks could be omitted, role-specific tasks could be prioritized incorrectly, or an AI system could invent onboarding requirements that do not exist in an approved source.
+Target population is internal: hiring managers / onboarding coordinators as operators, and new hires in the five named roles as plan consumers. Industry TAM/SAM/SOM is N/A.
 
-The MVP therefore treats the onboarding task catalog—not the language model—as the authoritative source of tasks.
+## Solution Overview
 
-## 1.2 Solution Overview
-
-The product is a CrewAI-based multi-agent application that accepts three CLI inputs:
-
-`role + department + start_date`
-
-It generates two Markdown artifacts:
+The product is a multi-agent application that accepts three CLI inputs—`role`, `department`, and `start_date`—and generates two Markdown artifacts:
 
 1. a role-aware 30/60/90-day onboarding plan; and
 2. a manager checklist supporting execution of that plan.
 
-Four specialized agents operate sequentially:
+Four specialized agents operate with a validation gate:
 
 **Role Analyst → Plan Builder → Compliance Checker → Document Writer**
 
-The Compliance Checker functions as a validation gate. A rejected plan returns to the Plan Builder for correction. A maximum of **two Builder retries** is allowed. After two unsuccessful rebuilds, the workflow terminates without generating an approved onboarding plan.
+The Compliance Checker is independent of the Plan Builder. A rejected plan returns to the Builder. A maximum of **two Builder retries** is allowed after the initial candidate. After two unsuccessful rebuilds, the workflow terminates without approved outputs.
 
-The system must never create onboarding tasks independently. Every generated task must correspond to a stable identifier in an approved task set.
+Unique value versus generic LLM drafting or a single checklist template:
 
-## 1.3 Strategic Rationale
+* the **task catalog**, not the language model, is the authoritative source of tasks;
+* every generated item must reference a stable `task_id`;
+* construction and validation are separated;
+* outputs remain auditable (catalog version/hash, workflow ID, validation findings).
 
-The MRD identified role-specific onboarding, fragmented ownership, provisioning requirements, and auditability as suitable areas for structured automation.
+Expected operational outcomes: consistent role-aware plans, 100% mandatory compliance/provisioning coverage in approved plans, zero invented tasks, and a later pilot target of **30% ramp-time reduction** against an assumed three-week baseline (Assumption A1).
 
-A multi-agent architecture is appropriate here because the workflow contains separable responsibilities with different validation boundaries:
+## Strategic Rationale
 
-* determining applicability;
-* sequencing;
-* independent compliance validation; and
-* document rendering.
+A multi-agent design is justified because the workflow has separable responsibilities with different validation boundaries: applicability, sequencing, independent compliance checking, and document rendering. The Builder must not also be the sole authority that declares a plan valid.
 
-The Compliance Checker is deliberately separated from the Plan Builder so that the component constructing a plan is not also solely responsible for declaring that plan valid.
+Business case is internal operational value (consistency, auditability, reduced manager reconstruction of checklists), not external subscription revenue. Competitive positioning versus Workday, Rippling, BambooHR, and similar platforms is N/A for MVP: this product does not replace an HRIS; it generates catalog-grounded plans locally.
 
-The selected runtime is CrewAI. Current CrewAI documentation supports sequential task processing and structured Pydantic/JSON outputs between tasks, both of which fit this workflow.
+Market timing figures are N/A for an internal tool. ROI formulas exist in the MRD but remain unpopulated until hiring volume and baselines are measured.
 
----
-
-# 2. Product Goals and Non-Goals
-
-## 2.1 MVP Goals
-
-The MVP SHALL:
-
-* generate a valid onboarding plan for each of the five supported roles;
-* combine applicable shared and role-specific task sets;
-* sequence tasks using the defined priority hierarchy;
-* organize tasks into 30/60/90-day buckets;
-* verify mandatory compliance and provisioning coverage;
-* prevent tasks outside the approved catalog from entering generated plans;
-* generate a manager-oriented checklist;
-* expose clear CLI success and failure states;
-* preserve structured intermediate artifacts for auditability;
-* provide a future adapter boundary for HRIS and identity-provider systems without implementing those integrations.
-
-## 2.2 Non-Goals
-
-The MVP SHALL NOT:
-
-* connect to a live HRIS;
-* connect to a live identity provider;
-* provision accounts or permissions;
-* execute onboarding tasks;
-* monitor task completion;
-* send notifications;
-* infer exact deadlines beyond assignment to the 30/60/90 buckets;
-* support roles other than the five explicitly named;
-* create new onboarding tasks dynamically;
-* infer legal or compliance requirements;
-* evaluate employee performance;
-* make employment decisions.
+Phase 2 implementation SHALL follow the CrewAI adapter (`AAMAD_TARGET_RUNTIME` / config target `crewai`). The product is the onboarding workflow and catalog contract, not a CrewAI-specific capability lock-in.
 
 ---
 
-# 3. Target Users
+# 2. Market Context & User Analysis
 
-## 3.1 Primary User: Hiring Manager / Onboarding Coordinator
+## Target Market / Users
 
-The primary CLI operator is a hiring manager or authorized onboarding coordinator.
+**Primary user — Hiring manager / onboarding coordinator**
 
-The operator needs to provide minimal employee context and receive a consistent plan without manually determining which role-specific and shared requirements apply.
+Operates the CLI. Needs to supply minimal employee context (`role`, `department`, `start_date`) and receive a consistent plan without manually deciding which shared and role-specific requirements apply.
 
-## 3.2 Secondary User: New Hire
+**Secondary user — New hire**
 
-The new hire is the principal consumer of the generated 30/60/90 plan but does not interact directly with the CLI in the MVP.
+Principal consumer of the 30/60/90 plan. Does not interact with the CLI in MVP.
 
-## 3.3 Supported Role Segments
-
-The product supports exactly:
+**Supported role segments (canonical identifiers only):**
 
 `UI Designer | UX Researcher | Product Manager | Developer | Engineer`
 
-Role matching SHALL use canonical identifiers rather than free-form semantic interpretation.
+Role matching SHALL use these canonical identifiers. No alias support is required for MVP. Developer and Engineer are distinct supported roles with separate role-specific task sets (stakeholder decision SD-5).
 
-No alias support is required for MVP unless aliases are explicitly added to configuration.
+**Market segment size and growth:** N/A as industry TAM. Addressable volume is 100% of onboarding events across the five roles. No organization-specific hiring counts were supplied (MRD A1, A10).
 
----
+**Geographic focus:** N/A / unspecified. Jurisdictional compliance requirements are an Open Question; MVP does not infer legal requirements.
 
-# 4. Authoritative Task-Set Model
+## User Needs Analysis
 
-## 4.1 Task Catalog Status
+**Critical pain points (MRD + product scope):**
 
-The actual onboarding task catalog has not been supplied.
+* Onboarding quality is broadly weak in published research; internal quality is unmeasured.
+* Ownership is fragmented across HR, managers, IT, and peers (SHRM).
+* Role-specific context is required; a generic checklist is insufficient.
+* Manual reconstruction of plans risks omitted compliance/provisioning work.
+* Unconstrained generative AI can invent tasks that are not approved.
 
-Therefore, the PRD defines **task-set interfaces and placeholders only**. Development agents MUST NOT populate these placeholders with model-generated onboarding tasks.
+**User journey (MVP):**
 
-Required task-set placeholders are:
+1. Operator validates a new hire’s role, department, and start date.
+2. Operator runs `onboard` with those three inputs.
+3. System validates input and catalog structure before any agent run.
+4. Agents select, sequence, and validate catalog tasks.
+5. On PASS, operator receives `onboarding-plan.md` and `manager-checklist.md` under `./output/` (or override).
+6. Manager uses the checklist; new hire uses the plan. Execution, reminders, and tracking are out of scope.
 
-* `shared_tasks`
-* `compliance_legal_tasks`
-* `it_provisioning_tasks`
-* `ui_designer_tasks`
-* `ux_researcher_tasks`
-* `product_manager_tasks`
-* `developer_tasks`
-* `engineer_tasks`
-* `team_integration_tasks`
+**Adoption barriers:** missing or placeholder catalog content; distrust if plans contain invented tasks; CLI-only surface; no live HRIS so data is typed by the operator.
 
-The stakeholder must populate or approve these task sets before generated plans can be considered production-valid.
+**Success factors:** catalog authority, fail-closed validation, explainable REJECT findings, stable CLI contract, traceability appendix.
 
-## 4.2 Task Definition Schema
+## Competitive Landscape
 
-Every authoritative task SHALL conform conceptually to:
+Direct commercial competitors are **not** the MVP alternative. The relevant alternatives are:
 
-```text
-TaskDefinition
-- task_id: string, required, globally unique, immutable
-- title: string, required
-- description: string, required
-- task_set: enum, required
-- category: enum, required
-- applicable_roles: list[SupportedRole], required
-- applicable_departments: list[string] | ["*"], required
-- mandatory: boolean, required
-- allowed_buckets: list[30 | 60 | 90], required
-- source_reference: string, required
-- active: boolean, required
-- version: string, required
-```
+| Alternative | Strength | Gap relative to this product |
+| ----------- | -------- | ---------------------------- |
+| Manual manager checklist | Full human control | Inconsistent coverage; high reconstruction cost |
+| Generic LLM prompt | Fast drafting | Invents tasks; no catalog traceability |
+| HRIS onboarding modules (Workday, BambooHR, Rippling, Deel) | Proven task/provisioning automation | Live integration and platform lock-in; out of MVP scope |
+| Identity lifecycle tools (Entra, Okta) | Provisioning automation | Identity only; not role-learning plans |
+| Zapier-style automation | Broad connectors | Governance and role-aware validation still must be designed |
 
-Allowed `category` values are:
-
-```text
-COMPLIANCE_LEGAL
-IT_PROVISIONING
-ROLE_ENABLEMENT
-TEAM_INTEGRATION
-```
-
-A task catalog without a unique `task_id`, applicability information, category, source reference, and bucket eligibility SHALL fail startup validation.
-
-## 4.3 Zero-Invention Enforcement
-
-Agents SHALL NOT pass task titles or newly composed task descriptions as authoritative task definitions between stages.
-
-Agents SHALL select and manipulate `task_id` references.
-
-Final task titles and descriptions SHALL be resolved from the authoritative catalog during document rendering.
-
-If an intermediate output contains a `task_id` not present in the loaded task catalog, the workflow SHALL be rejected.
-
-This requirement is the primary technical control supporting the success criterion of zero invented tasks.
+MVP differentiation is **catalog-grounded, validation-gated plan generation** for five AI Engineering roles. Pricing benchmarks are N/A (internal tool).
 
 ---
 
-# 5. Agent Roles, Responsibilities, and Interaction Pattern
+# 3. Technical Requirements & Architecture
 
-## 5.1 Overall Interaction Pattern
+## Runtime & Agent Specifications
 
-Required workflow:
+**Resolved runtime:** `crewai`
+**Process model:** sequential forward path; retry loop owned by application orchestrator
+**Language:** Python (`aamad.config.yml` `language.primary`)
+**Delegation:** `allow_delegation=false` unless a future SAD revision justifies a manager pattern
+**Memory:** `memory=false` for MVP reproducibility
+**LLM (stakeholder decision SD-1):** OpenAI `gpt-4o`; secret via `OPENAI_API_KEY` only
+
+Collaboration pattern:
 
 ```text
 CLI Input
@@ -214,89 +158,47 @@ Compliance Checker
    |
    +---- PASS ----> Document Writer ----> Markdown Outputs
    |
-   +---- REJECT --> Plan Builder
-                       |
-                       v
-                  Compliance Checker
+   +---- REJECT --> Plan Builder (max 2 retries after initial candidate)
 ```
 
-Maximum Builder retries after the initial plan: **2**.
+At most three candidate plans may be evaluated. The workflow SHALL NOT bypass the Compliance Checker. Document Writer SHALL execute only after `ComplianceResult.status == PASS`.
 
-Therefore, at most three candidate plans may be evaluated:
+Structured outputs SHALL use Pydantic models or equivalent JSON schemas at every agent boundary. Malformed output is a failed stage, not something to silently parse.
 
-* initial build;
-* retry 1;
-* retry 2.
+### Core Agent Definitions
 
-If the third evaluated candidate is rejected, processing terminates.
+**agent:** `role_analyst`
 
-The workflow SHALL NOT bypass the Compliance Checker.
-
-The Document Writer SHALL execute only after a Checker result of `PASS`.
-
-CrewAI's sequential-process and structured-output capabilities are suitable for this ordered task pattern. Structured outputs SHOULD be implemented with Pydantic models or equivalent runtime-supported JSON schemas rather than parsing free-form prose.
-
----
-
-## 5.2 Agent 1 — Role Analyst
-
-### Role
-
-Determine exactly which authoritative task definitions apply to the requested onboarding scenario.
-
-### Inputs
-
-* validated role;
-* validated department;
-* validated start date;
-* authoritative task catalog;
-* task catalog version.
-
-### Responsibilities
+* role: "Role Analyst"
+* goal: "Select exactly the authoritative task IDs that apply to the requested role"
+* backstory: "Applicability specialist who never invents or sequences tasks"
+* tools: read-only task-catalog access; no write, network, or shell tools
+* memory: false
+* delegation: false
+* runtime notes: CrewAI `max_iter <= 12`; output schema `RoleAnalysis`; department is metadata only in MVP (SD-7) and SHALL NOT filter task selection
 
 The Role Analyst SHALL:
 
-1. select all active shared tasks applicable to the department;
-2. select all active compliance/legal tasks applicable to the role and department;
-3. select all active IT provisioning tasks applicable to the role and department;
+1. select active shared tasks applicable to the role;
+2. select active compliance/legal tasks applicable to the role;
+3. select active IT provisioning tasks applicable to the role;
 4. select the matching role-specific task set;
 5. select applicable team-integration tasks;
-6. return task identifiers only;
-7. identify the task-set origin of every selected ID.
+6. return task identifiers only, with task-set origin for each ID.
 
-The Role Analyst SHALL NOT:
+The Role Analyst SHALL NOT create tasks, alter descriptions, sequence, assign buckets, omit mandatory applicable tasks, or perform compliance approval.
 
-* create tasks;
-* alter task descriptions;
-* sequence tasks;
-* assign 30/60/90 buckets;
-* omit a mandatory applicable task;
-* perform compliance approval.
+**agent:** `plan_builder`
 
-### Output
+* role: "Plan Builder"
+* goal: "Turn the applicability set into an ordered 30/60/90 candidate plan using catalog IDs only"
+* backstory: "Onboarding planner constrained by priority and bucket rules"
+* tools: read-only task-catalog access
+* memory: false
+* delegation: false
+* runtime notes: CrewAI `max_iter <= 12`; output schema `CandidatePlan`; on retry, modify only invalid aspects identified by the Checker
 
-`RoleAnalysis`
-
-Defined in Section 8.
-
----
-
-## 5.3 Agent 2 — Plan Builder
-
-### Role
-
-Transform the approved applicability set into an ordered 30/60/90 onboarding plan.
-
-### Inputs
-
-* `RoleAnalysis`;
-* task catalog;
-* priority rules;
-* previous validation result when executing a retry.
-
-### Mandatory Priority Rules
-
-Task sequencing SHALL apply this category priority, highest to lowest:
+Priority (highest to lowest):
 
 ```text
 1. COMPLIANCE_LEGAL
@@ -305,435 +207,115 @@ Task sequencing SHALL apply this category priority, highest to lowest:
 4. TEAM_INTEGRATION
 ```
 
-A lower-priority category SHALL NOT be intentionally placed ahead of an applicable higher-priority task within the same logical planning window unless the authoritative task definition prevents that ordering.
+Every selected task SHALL be assigned to exactly one of `30_DAY`, `60_DAY`, `90_DAY`, respecting `allowed_buckets`. Exact calendar deadlines SHALL NOT be inferred.
 
-### Bucket Rules
+**agent:** `compliance_checker`
 
-The Plan Builder SHALL assign every selected task to exactly one of:
+* role: "Compliance Checker"
+* goal: "Independently validate a candidate plan and return PASS or REJECT with machine-readable findings"
+* backstory: "Independent auditor who never edits plans"
+* tools: read-only catalog access plus deterministic validation helpers in application code
+* memory: false
+* delegation: false
+* runtime notes: CrewAI `max_iter <= 12`; output schema `ComplianceResult`; PASS eligibility is an application invariant, not an LLM self-assessment
 
-* `30_DAY`
-* `60_DAY`
-* `90_DAY`
+Required checks: mandatory compliance coverage; mandatory provisioning coverage; traceability; applicability; uniqueness; bucket validity; priority integrity; role integrity.
 
-Assignment SHALL respect the task's `allowed_buckets` configuration.
+**agent:** `document_writer`
 
-The Plan Builder SHALL NOT infer exact calendar deadlines.
+* role: "Document Writer"
+* goal: "Render an already-approved plan into Markdown using catalog-resolved titles and descriptions"
+* backstory: "Technical writer; presentation only"
+* tools: read-only catalog access; filesystem write to the configured output directory only
+* memory: false
+* delegation: false
+* runtime notes: CrewAI `max_iter <= 12`; precondition `PASS`; task IDs appear in an audit appendix only (SD-4)
 
-For example, it may classify a task as `30_DAY`, but it SHALL NOT invent a due date such as "complete by Tuesday, April 14" unless a future source integration explicitly provides that date.
+## Authoritative Task-Set Model
 
-### Retry Responsibilities
+The onboarding task catalog has not been supplied as approved content. This PRD defines **interfaces and placeholders only**. Development agents MUST NOT populate placeholders with model-generated onboarding tasks.
 
-When the Compliance Checker rejects a candidate, the Builder SHALL receive the structured validation findings.
+Required placeholder task sets (YAML, one file per set — SD-2):
 
-On a retry it SHALL modify only the aspects identified as invalid.
+* `shared_tasks`
+* `compliance_legal_tasks`
+* `it_provisioning_tasks`
+* `ui_designer_tasks`
+* `ux_researcher_tasks`
+* `product_manager_tasks`
+* `developer_tasks`
+* `engineer_tasks`
+* `team_integration_tasks`
 
-It SHALL NOT remove correctly selected mandatory tasks to resolve unrelated failures.
-
-### Output
-
-`CandidatePlan`
-
----
-
-## 5.4 Agent 3 — Compliance Checker
-
-### Role
-
-Serve as the mandatory independent validation gate.
-
-### Inputs
-
-* `RoleAnalysis`;
-* `CandidatePlan`;
-* authoritative task catalog;
-* priority rules;
-* current retry count.
-
-### Required Checks
-
-The Compliance Checker SHALL verify:
-
-**Coverage**
-
-Every applicable mandatory `COMPLIANCE_LEGAL` task is present.
-
-Every applicable mandatory `IT_PROVISIONING` task is present.
-
-**Traceability**
-
-Every plan item references an existing authoritative `task_id`.
-
-**Applicability**
-
-Every plan task was included in the Role Analyst output.
-
-**Uniqueness**
-
-No task is duplicated unless future task schema explicitly permits repetition.
-
-**Bucket validity**
-
-Every task is placed in one of its configured `allowed_buckets`.
-
-**Priority integrity**
-
-The candidate respects:
-
-`compliance/legal → IT provisioning → role enablement → team integration`
-
-**Role integrity**
-
-No task applicable exclusively to a different supported role appears in the plan.
-
-### Pass Condition
-
-The Checker returns `PASS` only when all validation checks succeed.
-
-### Reject Condition
-
-Any violation SHALL produce `REJECT`.
-
-A rejection SHALL contain machine-readable findings, including affected task IDs and validation-rule identifiers.
-
-### Retry Limit
-
-The Checker may cause a return to Plan Builder a maximum of **two times after the initial candidate**.
-
-The retry counter SHALL be controlled by deterministic application state, not by an agent deciding whether another retry is available.
-
-CrewAI exposes task guardrail and retry mechanisms, but the product-level two-retry limit specified here SHALL remain an explicit application invariant so runtime defaults cannot change product behavior.
-
----
-
-## 5.5 Agent 4 — Document Writer
-
-### Role
-
-Render an already-approved plan into human-readable Markdown.
-
-### Preconditions
-
-The Document Writer SHALL require:
+Conceptual `TaskDefinition` schema:
 
 ```text
-ComplianceResult.status == PASS
+TaskDefinition
+- task_id: string, required, globally unique, immutable
+- title: string, required
+- description: string, required
+- task_set: enum, required
+- category: enum, required
+- applicable_roles: list[SupportedRole], required
+- applicable_departments: list[string] | ["*"], required
+- mandatory: boolean, required
+- allowed_buckets: list[30 | 60 | 90], required
+- source_reference: string (URL), required
+- active: boolean, required
+- version: string, required
 ```
 
-If this precondition is false, the Writer SHALL not execute.
+Allowed `category` values: `COMPLIANCE_LEGAL`, `IT_PROVISIONING`, `ROLE_ENABLEMENT`, `TEAM_INTEGRATION`.
 
-### Outputs
+`source_reference` SHALL be a URL string (SD-8). A catalog missing unique `task_id`, applicability, category, source reference, or bucket eligibility SHALL fail startup validation.
 
-The Writer produces:
+**Zero-invention enforcement:** agents SHALL select and manipulate `task_id` references only. Titles and descriptions SHALL be resolved from the catalog at render time. An intermediate output containing an unknown `task_id` SHALL be rejected.
 
-```text
-onboarding-plan.md
-manager-checklist.md
-```
+## Integration Requirements
 
-### Onboarding Plan Requirements
+**MVP:** no live external integration. Input from CLI arguments. Task definitions from version-controlled local configuration. Outputs as local Markdown files. No application database.
 
-The onboarding plan SHALL contain:
-
-* role;
-* department;
-* start date;
-* task-catalog version;
-* 30-day section;
-* 60-day section;
-* 90-day section;
-* task IDs;
-* task titles resolved from the catalog;
-* task descriptions resolved from the catalog;
-* category;
-* source/task-set traceability.
-
-### Manager Checklist Requirements
-
-The manager checklist SHALL:
-
-* reference the same approved task IDs;
-* provide checkboxes suitable for Markdown;
-* group manager-relevant tasks by 30/60/90 stage;
-* include employee role, department, and start date;
-* include task provenance;
-* not introduce additional tasks.
-
-The Document Writer MAY alter presentation wording surrounding tasks.
-
-It SHALL NOT alter the authoritative meaning of a task or create a new task.
-
----
-
-# 6. Integration Requirements
-
-## 6.1 MVP
-
-There SHALL be no live external integration in MVP.
-
-Input originates from CLI arguments.
-
-Task definitions originate from local/version-controlled configuration.
-
-Outputs are local Markdown files.
-
-## 6.2 Adapter Boundary
-
-Development SHALL isolate external employee-data acquisition behind an interface conceptually equivalent to:
+Employee-data acquisition SHALL be isolated behind:
 
 ```text
 EmployeeContextProvider
-
-get_employee_context(input_reference)
-    -> EmployeeContext
+    get_employee_context(input_reference) -> EmployeeContext
 ```
 
-The CLI implementation SHALL be one adapter:
+MVP adapter: `CliEmployeeContextProvider`. Future HRIS and identity-provider adapters SHALL implement the same contract and SHALL NOT require changes to agent business logic.
 
-```text
-CliEmployeeContextProvider
-```
+Future HRIS fields may include employee identity, manager, employment type, location, and legal entity; only `role`, `department`, and `start_date` are required for the current workflow. No HRIS or IdP vendor is selected.
 
-Future integrations SHALL implement the same contract rather than modifying downstream agents.
+**Authentication (MVP):** none. The CLI is assumed to be operated by an authorized person on a trusted workstation (Assumption A5). LLM provider secrets SHALL NOT be embedded in catalogs, code, or generated Markdown.
 
-## 6.3 Future HRIS Adapter
+**Performance:** no throughput SLA. One workflow per CLI invocation. Correctness over completeness.
 
-A future HRIS adapter may supply:
+## Infrastructure Specifications
 
-```text
-employee_id
-employee_name
-role
-department
-start_date
-manager_id
-manager_name
-employment_type
-work_location
-legal_entity
-```
+* **Hosting (MVP):** local / developer workstation or a single-process runtime. Cloud hosting is Future Work for Deliver.
+* **Compute / memory:** sufficient for one Python CrewAI process and OpenAI API calls; no cluster requirement.
+* **Network:** outbound LLM provider access only; no HRIS/IdP network dependency.
+* **Monitoring / logging:** each run SHOULD record `workflow_id`, inputs, catalog version/hash, selected task IDs, candidate plans, validation findings, retry count, final status, and output paths. Secrets redacted. Persist diagnostics under a project-scoped logs path during Build.
 
-Only `role`, `department`, and `start_date` are required by the current MVP workflow.
-
-No HRIS vendor is selected.
-
-Any vendor-specific API behavior is outside this PRD.
-
-## 6.4 Future Identity-Provider Adapter
-
-A future identity-provider adapter may supply or verify:
-
-```text
-employee_identity_id
-account_status
-group_memberships
-application_assignments
-provisioning_status
-manager_relationship
-```
-
-Its future purpose would be to distinguish requested provisioning tasks from completed provisioning work.
-
-The MVP SHALL NOT query or modify any identity system.
-
-## 6.5 Adapter Design Constraint
-
-Agent business logic SHALL NOT depend on:
-
-* HRIS vendor;
-* identity-provider vendor;
-* API authentication method;
-* network transport;
-* vendor-specific field names.
-
-Vendor-specific translation belongs exclusively inside adapters.
-
----
-
-# 7. User Interface and Experience
-
-## 7.1 Interface
-
-MVP interface: command line.
-
-Required inputs:
-
-```text
-role
-department
-start_date
-```
-
-Example conceptual invocation:
-
-```text
-onboard --role "Developer" --department "AI Engineering" --start-date "YYYY-MM-DD"
-```
-
-Exact executable/package naming is an implementation decision.
-
-## 7.2 Input Validation
-
-### Role
-
-Role is required.
-
-Accepted canonical values:
-
-```text
-UI Designer
-UX Researcher
-Product Manager
-Developer
-Engineer
-```
-
-An unsupported role SHALL fail before any CrewAI workflow begins.
-
-The application SHALL display the supported values.
-
-### Department
-
-Department is required.
-
-It SHALL:
-
-* contain non-whitespace content;
-* be normalized for leading/trailing whitespace;
-* not be silently inferred.
-
-No fixed department enumeration is required by this PRD.
-
-### Start Date
-
-Start date is required.
-
-It SHALL conform to ISO date format:
-
-```text
-YYYY-MM-DD
-```
-
-Invalid calendar dates SHALL be rejected.
-
-The application SHALL NOT infer a missing date from system time.
-
-## 7.3 Task-Catalog Validation
-
-Before agent execution, the application SHALL validate that required task sets exist structurally.
-
-Because actual task content is currently unspecified, a catalog containing unresolved placeholders SHALL be considered **development configuration only** and SHALL not produce a production-valid plan.
-
-## 7.4 Successful User Experience
-
-On success, the CLI SHALL display:
-
-```text
-Onboarding plan generated successfully.
-
-Role: <role>
-Department: <department>
-Start date: <date>
-Validation: PASS
-Compliance retries used: <0-2>
-
-Outputs:
-<path>/onboarding-plan.md
-<path>/manager-checklist.md
-```
-
-Exit status SHALL indicate success.
-
-## 7.5 Input Failure Experience
-
-For invalid input, the workflow SHALL terminate before agent execution.
-
-Example:
-
-```text
-ERROR: Unsupported role "Data Scientist".
-
-Supported roles:
-UI Designer
-UX Researcher
-Product Manager
-Developer
-Engineer
-
-No files were generated.
-```
-
-## 7.6 Validation Failure Experience
-
-If compliance validation remains unsuccessful after two Builder retries:
-
-```text
-ERROR: Unable to generate a compliant onboarding plan.
-
-Validation attempts: 3
-Builder retries: 2
-Final status: REJECT
-
-Reasons:
-<structured, human-readable findings>
-
-No approved onboarding plan or manager checklist was generated.
-```
-
-The CLI SHALL return a non-success exit status.
-
-A machine-readable validation artifact MAY be retained for diagnostics but SHALL be clearly labeled as a failed-run diagnostic rather than an onboarding plan.
-
----
-
-# 8. Technical Architecture and Multi-Agent Coordination
-
-## 8.1 Runtime
-
-Required runtime:
-
-```text
-CrewAI
-```
-
-Required process model:
-
-```text
-Sequential
-```
-
-CrewAI supports sequential task execution, and its task API supports structured Pydantic/JSON task outputs. The implementation SHOULD use structured outputs for every agent boundary.
-
-## 8.2 Architectural Layers
-
-The MVP SHOULD be divided conceptually into:
+Conceptual layers:
 
 ```text
 CLI Layer
-    |
-Input Validation
-    |
-Employee Context Adapter
-    |
-Task Catalog Repository
-    |
-Workflow Orchestrator
-    |
-CrewAI Agents
-    |
-Deterministic Validation / Retry Controller
-    |
-Document Renderer
-    |
-Filesystem Output
+    → Input Validation
+    → Employee Context Adapter
+    → Task Catalog Repository
+    → Workflow Orchestrator
+    → Runtime agents (CrewAI)
+    → Deterministic Validation / Retry Controller
+    → Document Renderer
+    → Filesystem Output
 ```
 
-CrewAI agents SHALL not directly parse CLI arguments or write arbitrary output files outside their defined responsibility.
+Agents SHALL NOT parse CLI arguments directly or write arbitrary files outside defined responsibility.
 
----
+## Shared Context and Handoffs
 
-## 8.3 Shared Context
-
-All stages SHALL have access, directly or through structured task context, to:
+All stages SHALL have access to:
 
 ```text
 WorkflowContext
@@ -749,721 +331,347 @@ WorkflowContext
 - max_builder_retries = 2
 ```
 
-`workflow_id` SHALL uniquely identify one generation attempt.
+**Handoff A — CLI to Role Analyst:** `OnboardingRequest` (`workflow_id`, `role`, `department`, `start_date`, `task_catalog_version`). Preconditions: valid role, department, start date, catalog loaded.
 
-`task_catalog_hash` SHOULD allow later verification that all stages operated against the same catalog snapshot.
+**Handoff B — Role Analyst to Plan Builder:** `RoleAnalysis` with `applicable_tasks` as `{task_id, source_task_set, category, mandatory}` only. Every `task_id` MUST exist in the catalog.
+
+**Handoff C — Plan Builder to Checker:** `CandidatePlan` with `build_attempt` (1=initial, 2=first retry, 3=final retry) and per-bucket `{task_id, sequence}`. No free-form task definitions.
+
+**Handoff D — Checker:** `ComplianceResult` with `status: PASS | REJECT`, boolean checks, and findings (`rule_id`, `severity: ERROR`, `task_ids`, `message`). PASS requires every boolean check `true` and no error-level findings.
+
+**Handoff E — Rejection to Builder:** `PlanRevisionRequest` with previous candidate, compliance result, and next build attempt. Role Analyst SHALL NOT rerun solely because sequencing failed.
+
+**Handoff F — Approved plan to Writer:** `ApprovedPlan` only when status is PASS.
+
+## Retry and Failure State Machine
+
+```text
+BUILD attempt 1 → CHECK
+    PASS → WRITE → SUCCESS
+    REJECT → BUILD attempt 2 → CHECK
+        PASS → WRITE → SUCCESS
+        REJECT → BUILD attempt 3 → CHECK
+            PASS → WRITE → SUCCESS
+            REJECT → TERMINAL FAILURE
+```
+
+Retry counter SHALL NOT reset during one workflow. No fourth build attempt. On terminal failure: do not invoke Document Writer; do not emit approved plan or checklist; emit structured diagnostics; return non-success CLI status.
 
 ---
 
-## 8.4 Handoff A — CLI to Role Analyst
-
-Schema:
-
-```text
-OnboardingRequest
-- workflow_id: string
-- role: SupportedRole
-- department: string
-- start_date: date
-- task_catalog_version: string
-```
-
-Preconditions:
-
-* role valid;
-* department valid;
-* start date valid;
-* task catalog loaded successfully.
-
----
-
-## 8.5 Handoff B — Role Analyst to Plan Builder
-
-Schema:
-
-```text
-RoleAnalysis
-- workflow_id: string
-- role: SupportedRole
-- department: string
-- start_date: date
-- applicable_tasks:
-    - task_id: string
-      source_task_set: string
-      category: TaskCategory
-      mandatory: boolean
-- task_catalog_version: string
-```
-
-Critical invariant:
-
-```text
-∀ task in applicable_tasks:
-    task.task_id MUST exist in authoritative catalog
-```
-
-The Plan Builder SHALL reject malformed analysis rather than trying to repair unidentified task IDs.
-
----
-
-## 8.6 Handoff C — Plan Builder to Compliance Checker
-
-Schema:
-
-```text
-CandidatePlan
-- workflow_id: string
-- build_attempt: integer
-- role: SupportedRole
-- department: string
-- start_date: date
-- buckets:
-    30_DAY:
-        - task_id
-        - sequence
-    60_DAY:
-        - task_id
-        - sequence
-    90_DAY:
-        - task_id
-        - sequence
-- task_catalog_version: string
-```
-
-`build_attempt` values:
-
-```text
-1 = initial build
-2 = first retry
-3 = second/final retry
-```
-
-No free-form task definitions SHALL be accepted in `CandidatePlan`.
-
----
-
-## 8.7 Handoff D — Compliance Checker Decision
-
-Schema:
-
-```text
-ComplianceResult
-- workflow_id: string
-- evaluated_build_attempt: integer
-- status: PASS | REJECT
-- checks:
-    mandatory_compliance_complete: boolean
-    mandatory_provisioning_complete: boolean
-    all_tasks_traceable: boolean
-    all_tasks_applicable: boolean
-    no_duplicates: boolean
-    bucket_rules_valid: boolean
-    priority_rules_valid: boolean
-    role_integrity_valid: boolean
-- findings:
-    - rule_id: string
-      severity: ERROR
-      task_ids: list[string]
-      message: string
-- task_catalog_version: string
-```
+# 4. Functional Requirements
 
-A `PASS` result requires every Boolean validation field to equal `true`.
+## Core Features (Priority P0)
 
-Agents SHALL NOT be permitted to return `PASS` while including an error-level finding.
+**FR-001 — Accept supported input**
 
----
+As a hiring manager, I want to pass role, department, and start date to `onboard` so that a plan can be generated without a web UI.
 
-## 8.8 Handoff E — Rejection to Plan Builder
+Acceptance: CLI accepts the three required arguments; executable name is `onboard` (SD-6).
 
-For attempts 1 or 2 that fail, the Builder receives:
+**FR-002 — Validate input before agent execution**
 
-```text
-PlanRevisionRequest
-- previous_candidate_plan
-- compliance_result
-- next_build_attempt
-```
+As an operator, I want invalid inputs to fail immediately so that the crew is never invoked on bad data.
 
-The Builder SHALL use the findings as correction constraints.
+Acceptance: unsupported role, blank department, missing/malformed/impossible start date fail with a non-zero exit, a clear error, and no generated files. Supported roles are listed on role errors. Start date MUST be `YYYY-MM-DD`. The application SHALL NOT infer a missing date from system time. Department MUST be non-whitespace after trim; no department enumeration is required.
 
-It SHALL continue using the original `RoleAnalysis`.
+**FR-003 — Resolve applicable tasks**
 
-The Role Analyst SHALL not rerun solely because the Builder produced an invalid sequence.
+As a manager, I want the system to select the correct catalog tasks for the hire’s role so that I do not assemble the plan by hand.
 
-If source applicability itself is shown to be structurally invalid, the workflow SHOULD terminate as a configuration/system error rather than allowing agents to reinterpret the catalog.
+Acceptance: Role Analyst returns only catalog `task_id`s applicable to the role; department is recorded but does not filter selection in MVP (SD-7).
 
----
+**FR-004 — Support five roles**
 
-## 8.9 Handoff F — Approved Plan to Document Writer
+As the organization, I want exactly the five named roles supported so that scope stays bounded.
 
-Schema:
+Acceptance: canonical role set only; Developer and Engineer have separate task sets (SD-5).
 
-```text
-ApprovedPlan
-- candidate_plan
-- compliance_result
-- task_catalog_version
-- task_catalog_hash
-```
+**FR-005 — Apply priority ordering**
 
-Precondition:
+As a compliance-conscious operator, I want legal/compliance work before provisioning, role enablement, and team integration so that critical tasks are not buried.
 
-```text
-compliance_result.status == PASS
-```
+Acceptance: Plan Builder sequences by `COMPLIANCE_LEGAL > IT_PROVISIONING > ROLE_ENABLEMENT > TEAM_INTEGRATION` within a planning window unless a task definition forbids that order.
 
-The Document Writer resolves each `task_id` against the catalog and renders the two Markdown outputs.
+**FR-006 — Generate 30/60/90 structure**
 
----
+As a new hire, I want tasks grouped into 30-, 60-, and 90-day buckets so that I know the planning window.
 
-# 9. Retry and Failure State Machine
+Acceptance: every applicable task is in exactly one allowed bucket; no invented calendar due dates.
 
-Required deterministic behavior:
+**FR-007 — Validate mandatory coverage**
 
-```text
-BUILD attempt 1
-    |
-CHECK
-    |
-    +-- PASS --> WRITE --> SUCCESS
-    |
-    +-- REJECT --> BUILD attempt 2
-                       |
-                     CHECK
-                       |
-                       +-- PASS --> WRITE --> SUCCESS
-                       |
-                       +-- REJECT --> BUILD attempt 3
-                                          |
-                                        CHECK
-                                          |
-                                          +-- PASS --> WRITE --> SUCCESS
-                                          |
-                                          +-- REJECT --> TERMINAL FAILURE
-```
+As the organization, I want every applicable mandatory compliance and IT provisioning task present in approved plans.
 
-The retry counter SHALL NOT reset during one workflow.
+Acceptance: Checker verifies 100% presence of those mandatory IDs; omission yields REJECT.
 
-No fourth build attempt is permitted.
+**FR-008 — Enforce task traceability**
 
-On terminal failure:
+As an auditor, I want every plan item to map to a catalog `task_id` so that no invented work reaches a hire.
 
-* do not invoke Document Writer;
-* do not create approved plan output;
-* do not create manager checklist output;
-* emit structured diagnostic information;
-* return non-success CLI status.
+Acceptance: unknown IDs cause REJECT; Writer resolves titles/descriptions from the catalog only.
 
----
+**FR-009 — Implement validation loop**
 
-# 10. Functional Requirements
+As an operator, I want invalid plans corrected up to two Builder retries so that recoverable sequencing errors do not immediately fail the run.
 
-## P0 — Must Have
+Acceptance: max two returns to Plan Builder after the initial candidate; retry count is application state.
 
-### FR-001 — Accept Supported Input
+**FR-010 — Fail closed**
 
-The CLI SHALL accept role, department, and start date.
+As the organization, I want no approved documents if validation never passes.
 
-### FR-002 — Validate Input Before Agent Execution
+Acceptance: after three rejected evaluations, no `onboarding-plan.md` or `manager-checklist.md` is written as approved output.
 
-Invalid inputs SHALL fail without invoking the crew.
+**FR-011 — Generate onboarding Markdown**
 
-### FR-003 — Resolve Applicable Tasks
+As a new hire, I want a 30/60/90 Markdown plan with role, department, start date, catalog version, resolved titles/descriptions, category, and provenance.
 
-The Role Analyst SHALL select applicable task IDs from approved task sets.
+Acceptance: plan body does not show raw `task_id`s; IDs appear in an audit appendix (SD-4).
 
-### FR-004 — Support Five Roles
+**FR-012 — Generate manager checklist**
 
-Exactly the five named roles SHALL be supported.
+As a hiring manager, I want a Markdown checklist of the same approved tasks, grouped by 30/60/90, with checkboxes, employee context, and provenance, and with no extra tasks.
 
-### FR-005 — Apply Priority Ordering
+Acceptance: checklist task IDs match the approved plan; IDs in appendix only.
 
-The Plan Builder SHALL prioritize:
+**FR-013 — Preserve traceability**
 
-`compliance/legal → IT provisioning → role enablement → team integration`
+As an auditor, I want workflow and catalog identity recorded so that a plan can be reproduced against the same catalog snapshot.
 
-### FR-006 — Generate 30/60/90 Structure
+Acceptance: documents include catalog version; hash SHOULD be recorded; workflow_id identifies the run.
 
-Every applicable task SHALL be assigned to exactly one supported bucket.
+**FR-014 — Adapter boundary**
 
-### FR-007 — Validate Mandatory Coverage
+As a future integrator, I want employee context behind an interface so that HRIS/IdP can be added without rewriting agents.
 
-The Compliance Checker SHALL verify 100% presence of applicable mandatory compliance and IT provisioning tasks.
+Acceptance: CLI is one `EmployeeContextProvider`; agent logic has no vendor-specific HRIS/IdP calls.
 
-### FR-008 — Enforce Task Traceability
+**FR-015 — Load authoritative catalog**
 
-Every generated task SHALL reference a valid authoritative `task_id`.
+As a developer, I want YAML task-set files validated at startup so that placeholder or invalid catalogs cannot silently produce production-valid plans.
 
-### FR-009 — Implement Validation Loop
+Acceptance: required task-set files exist structurally; unresolved placeholders are development-only and SHALL NOT be treated as production-valid.
 
-Rejected plans SHALL return to Plan Builder, maximum two retries.
+**FR-016 — Configurable output location**
 
-### FR-010 — Fail Closed
+As an operator, I want files written to `./output/` by default, overridable via `--output-dir` or `ONBOARDING_OUTPUT_DIR` (SD-3).
 
-If compliance validation does not pass after the permitted retries, no approved user-facing documents SHALL be generated.
+Acceptance: successful runs write both Markdown files to the resolved directory.
 
-### FR-011 — Generate Onboarding Markdown
+## Enhanced Features (Priority P1)
 
-Successful workflows SHALL generate a 30/60/90 Markdown onboarding plan.
+Deferred unless needed to meet P0 acceptance. Should-have items that MAY be implemented if they do not expand MVP scope:
 
-### FR-012 — Generate Manager Checklist
-
-Successful workflows SHALL generate a Markdown manager checklist based on exactly the approved plan.
-
-### FR-013 — Preserve Traceability
-
-Generated documents SHALL expose task IDs or equivalent traceability metadata.
-
-### FR-014 — Adapter Boundary
-
-Employee-context acquisition SHALL be abstracted sufficiently to permit later CLI, HRIS, or identity-provider implementations.
-
----
-
-# 11. Feature Prioritization
-
-## Must Have
-
-* CLI input and validation
-* five-role enumeration
-* authoritative task-catalog loader
-* placeholder task-set interfaces
-* Role Analyst
-* Plan Builder
-* Compliance Checker
-* Document Writer
-* sequential CrewAI orchestration
-* structured handoff schemas
-* two-retry compliance loop
-* mandatory-task validation
-* zero-invented-task validation
-* priority rules
-* 30/60/90 bucketing
-* onboarding Markdown output
-* manager checklist Markdown output
-* failure-safe behavior
-* task traceability
-* integration adapter boundary
-
-## Should Have
-
-* structured run diagnostics
-* catalog version/hash recorded in output
-* human-readable compliance findings
-* configurable output directory
+* structured run diagnostics on failure (labeled as diagnostics, not approved plans)
+* human-readable compliance findings in CLI errors
 * deterministic filenames
-* duplicate-task detection
-* unit-test fixtures for all five roles
-* deterministic application-level schema validation around CrewAI outputs
+* duplicate-task detection (also implied by Checker uniqueness)
+* unit-test fixtures for all five roles (`aamad.config.yml` requires unit tests)
+* integration tests mapped to acceptance criteria (`aamad.config.yml`)
+* deterministic application-level schema validation around runtime outputs
 
-## Could Have
+## Future Features (Priority P2)
 
-* alternative Markdown templates
-* CLI `--verbose` mode
-* machine-readable JSON result alongside Markdown
-* dry-run validation mode
-* configurable role aliases
-* catalog linting command
-* plan-diff capability between task-catalog versions
+Explicit Future Work — not MVP:
 
-None of the Could Have features is required for MVP acceptance.
+* live HRIS integration
+* live identity-provider integration
+* account provisioning or permission assignment
+* executing onboarding tasks
+* completion tracking, notifications, reminders
+* exact deadline inference beyond 30/60/90 buckets
+* additional roles or role aliases
+* dynamic/catalog task invention by agents
+* legal/compliance inference beyond the catalog
+* performance evaluation or employment decisions
+* web/chat UI (`aamad.config.yml` UI theme/visual_style apply only if a UI is later scoped)
+* JSON result alongside Markdown
+* dry-run mode, catalog lint CLI, plan-diff across catalog versions
+* alternative Markdown templates / `--verbose`
+* enterprise AuthN/AuthZ, SSO, IAM
+* onboarding analytics dashboard
+
+Any development agent proposing a P2 item SHALL classify it as Future Work rather than adding it to MVP.
 
 ---
 
-# 12. Non-Functional Requirements
+# 5. Non-Functional Requirements
 
-## 12.1 Correctness
+## Performance Requirements
 
-Correctness takes precedence over generation completeness.
+* **Correctness over completeness:** fail rather than emit a plan that violates mandatory coverage or traceability.
+* **Response time:** no hard SLA; monitor during pilot. Happy-path duration depends on LLM latency.
+* **Throughput:** one concurrent workflow per CLI invocation.
+* **Availability:** N/A as a hosted SLA; the tool is available when the operator can run the CLI and reach the LLM provider.
 
-The product SHALL fail rather than knowingly generate an onboarding plan that violates mandatory-task coverage or traceability requirements.
+The following SHALL be deterministic even when LLM reasoning is used inside constraints: input validation; role enumeration; task-ID existence; retry counting; max retries; output-schema validation; PASS eligibility; terminal failure; document-write eligibility.
 
-## 12.2 Determinism at Control Boundaries
+## Security & Compliance
 
-LLM reasoning may determine applicability and sequencing within defined constraints.
+* No HRIS/IdP credentials in MVP.
+* `OPENAI_API_KEY` (or equivalent provider key) from environment only; never committed (`security.forbid_committed_secrets: true`).
+* Least-privilege tools per agent (catalog read; Writer write only to output dir).
+* Data minimization: persist workflow inputs and catalog references needed for audit, not extra employee PII.
+* `security.require_security_assessment: true` — `@security.eng` SHALL produce `project-context/2.build/security.md` before Deliver.
+* `security.dependency_audit: true` — dependency audit in Build/Deliver.
+* MVP SHALL NOT infer legal requirements; only catalogued `COMPLIANCE_LEGAL` tasks apply.
+* Prompt Trace / diagnostics SHALL redact secrets.
 
-The following SHALL be deterministic:
+## Scalability & Reliability
 
-* input validation;
-* role enumeration;
-* task-ID existence validation;
-* retry counting;
-* maximum retries;
-* output-schema validation;
-* PASS eligibility;
-* terminal failure;
-* document-write eligibility.
+* Scaling triggers: N/A for MVP; MRD A6 treats volume as moderate and correctness-first.
+* Fault tolerance: invalid input fails before crew; malformed agent output fails the stage; LLM/API failure is a non-success CLI result; SIGINT/cancel SHALL not leave approved partial outputs.
+* Recovery: operator re-runs the CLI; no workflow resume/memory in MVP.
+* Type checking is required (`coding_standards.type_checking: true`). Prefer files at or below `max_file_lines: 400` unless a module cannot be split without harming clarity.
 
-## 12.3 Auditability
+---
 
-Every run SHOULD record:
+# 6. User Experience Design
+
+## Interface Requirements
+
+MVP interface is the command line. No web or mobile client.
+
+Conceptual invocation:
 
 ```text
-workflow_id
-input values
-task catalog version/hash
-selected task IDs
-candidate plans
-validation findings
-retry count
-final status
-output file paths
+onboard --role "Developer" --department "AI Engineering" --start-date "YYYY-MM-DD" [--output-dir PATH]
 ```
 
-## 12.4 Security
+Accessibility/usability for GUI does not apply. CLI usability requirements: clear success/failure copy; list supported roles on role errors; non-zero exit on failure; do not claim success when validation failed.
 
-Because no live integrations exist, the MVP SHALL not require HRIS or identity-provider credentials.
+`aamad.config.yml` UI keys (`theme`, `visual_style`, `prefer_modals`) are **not applicable** to this CLI MVP and SHALL NOT be used to justify adding a graphical UI.
 
-Secrets for the selected LLM provider SHALL not be embedded in task catalogs or generated Markdown.
+## Agent Interaction Design
 
-## 12.5 Reliability
+Human–agent communication is batch, not conversational:
 
-Malformed agent output SHALL be treated as a failed stage rather than silently parsed or guessed.
-
-Structured CrewAI outputs SHOULD use Pydantic or JSON schemas to reduce handoff parsing ambiguity. CrewAI specifically documents these structured output mechanisms and recommends structured outputs for production data exchange.
+* Operator supplies three validated fields.
+* Agents do not ask clarifying questions in MVP.
+* Success copy includes role, department, start date, Validation PASS, retries used (0–2), and output paths.
+* Input failure: error before agents; example unsupported role message lists the five canonical roles.
+* Validation failure after retries: show attempt counts, final REJECT, structured human-readable findings; no approved files.
+* Transparency: audit appendix with task IDs, catalog version/hash; CLI reports retry count; optional diagnostic artifact on failure MUST be labeled as a failed-run diagnostic.
 
 ---
 
-# 13. Success Metrics and Validation Criteria
+# 7. Success Metrics & KPIs
 
-## 13.1 Ramp-Time Reduction
+## Business / Operational Metrics
 
-### Target
+| Metric | Target | Notes |
+| ------ | ------ | ----- |
+| Ramp-time reduction | **30%** vs assumed 3-week baseline | A1; ~2.1 weeks arithmetic only; not measured |
+| Mandatory compliance + provisioning coverage | **100%** in every approved plan | Automated |
+| Invented tasks | **Zero** | Automated |
 
-**30% reduction in ramp time compared with an assumed three-week manual baseline.**
+Ramp-time cannot be proven by unit tests. Validation requires a pilot with a per-role “ramp complete” definition, measured baseline, and agreed aggregation (median or specified method). Until A1 is replaced, the 30% target is a hypothesis.
 
-### Assumption
+## Technical Metrics
 
-**ASSUMPTION A1:** Current manual ramp time is three weeks.
+* Invalid inputs never invoke the crew (100% of invalid-input tests).
+* Checker cannot be bypassed; Writer never runs without PASS.
+* No fourth Builder attempt.
+* Failed runs generate neither approved document.
+* Inter-agent handoffs conform to schemas.
+* Agent effectiveness: `mandatory_coverage == 1.0`; `invalid_task_count == 0`.
+* Cost: no dollar ceiling supplied; log token/cost telemetry when available. Do not invent a budget.
 
-This baseline was supplied as an assumption and has not been measured against actual organizational onboarding data.
+## User Experience Metrics
 
-The 30% value is a stakeholder-defined product success target, not an externally sourced benchmark.
+* Task completion for the operator: successful generation of both files for each of the five roles using approved fixtures.
+* Time-to-value: one CLI invocation after catalog load; no multi-step wizard.
+* Satisfaction: not instrumented in MVP; collect qualitatively in the pilot.
+* New-hire CSAT / clarity scores from the MRD remain Future Work.
 
-A 30% reduction against a three-week baseline implies a target equivalent of approximately:
+## Validation Test Matrix (minimum)
 
-```text
-3 weeks × 70% = 2.1 weeks
-```
+**Happy paths:** one successful generation per supported role.
 
-This derived value is arithmetic, not measured organizational evidence.
+**Invalid inputs:** missing role; unsupported role; blank department; missing start date; malformed start date; impossible calendar date.
 
-### MVP Test Method
+**Compliance failures:** missing mandatory compliance task; missing mandatory provisioning task; invented task ID; wrong-role task; duplicate task; invalid bucket; priority violation.
 
-The MVP itself does not execute onboarding or track employees, so actual ramp-time reduction cannot be validated solely through automated system tests.
+**Retry:** pass on attempt 1; fail then pass on retry 1; fail twice then pass on attempt 3; all three fail (terminal); verify no fourth build.
 
-Validation SHALL occur through a pilot:
-
-1. define a role-specific "ramp complete" criterion before the pilot;
-2. establish actual historical/manual baseline data;
-3. record start-to-ramp-complete duration for onboarding workflows using the generated plans;
-4. compare median or agreed aggregation method against baseline;
-5. calculate percentage reduction.
-
-Formula:
-
-```text
-reduction =
-(baseline_ramp_time - generated_plan_ramp_time)
-/
-baseline_ramp_time
-× 100
-```
-
-Product success criterion:
-
-```text
-reduction >= 30%
-```
-
-Until measured baseline data replaces A1, this metric remains a validation hypothesis rather than a demonstrated outcome.
+**Outputs:** success writes exactly two approved Markdown files with 30/60/90 sections and matching checklist IDs; failure writes no approved plan/checklist, shows reason, non-zero exit.
 
 ---
 
-## 13.2 Mandatory Compliance and Provisioning Coverage
+# 8. Implementation Strategy
 
-### Target
+## Development Phases
 
-**100% of mandatory compliance and provisioning tasks present in every generated plan.**
+**Phase 1 — Define**
 
-### Automated Test Method
+* MRD complete
+* This PRD complete (template-aligned)
+* SAD exists; remaining before production-valid plans: populate and approve the task catalog; name task-set owners; confirm role-task applicability in catalog content
 
-For each supported role and representative department fixture:
+**Phase 2 — Build** (recommended order)
 
-1. derive expected mandatory IDs directly from the authoritative catalog;
-2. generate a plan;
-3. extract all task IDs from the approved candidate;
-4. calculate:
+1. Task schemas and catalog validation
+2. CLI / input validation
+3. Structured handoff models
+4. Role Analyst
+5. Plan Builder
+6. Compliance Checker
+7. Deterministic retry controller
+8. Document Writer
+9. Markdown templates (IDs in appendix)
+10. Unit and integration tests mapped to acceptance criteria
+11. Adapter interfaces for future HRIS/IdP
+12. Security assessment (`security.md`) before Deliver
 
-```text
-mandatory_coverage =
-count(expected_mandatory_ids ∩ generated_ids)
-/
-count(expected_mandatory_ids)
-```
+Follow the modular AAMAD build sequence: core configuration → API/runtime → frontend/CLI UX → validation. CLI is the MVP “frontend”; a chat UI epic is out of scope.
 
-Required result:
+**Phase 3 — Deliver**
 
-```text
-mandatory_coverage == 1.0
-```
+Deploy configs, runbook, and user guide (`documentation.require_user_guide: true`) are owned by `@devops.eng` after QA (and security assessment).
 
-Test coverage SHALL include:
+## Resource Requirements
 
-* every supported role;
-* task sets containing multiple mandatory tasks;
-* tasks applicable to all roles;
-* tasks applicable to one role only;
-* rejection cases where Builder output intentionally omits one required task.
+Exact staffing, calendar, and budget are TBD (MRD A9). MVP needs: product owner for catalog approval, backend/runtime engineer, test coverage, and security review. No frontend engineer is required for CLI-only MVP.
 
-A deliberately incomplete candidate MUST be rejected by the Compliance Checker.
+## Risk Mitigation
 
----
+| Risk | Mitigation |
+| ---- | ---------- |
+| Invented onboarding tasks | Catalog authority; ID-only handoffs; Checker; fail closed |
+| Placeholder catalog treated as production | Explicit development-only rule; startup validation |
+| Builder self-certifies | Separate Checker; deterministic PASS |
+| Runtime retry defaults change product behavior | `max_builder_retries = 2` in application code |
+| Secret leakage | Env-only keys; redacted logs |
+| Scope creep into live HRIS | Adapter boundary; P2 list |
+| Multi-agent complexity without value | Keep four bounded agents; benchmark later vs deterministic builder if needed |
+| SAD/PRD drift | This PRD absorbs SD-1–SD-8; architecture remains in SAD |
 
-## 13.3 Zero Invented Tasks
-
-### Target
-
-**Zero invented tasks.**
-
-Every generated task must be traceable to a defined task set.
-
-### Automated Test Method
-
-For every task ID in every generated plan:
-
-```text
-assert generated_task.task_id in authoritative_catalog
-```
-
-Additionally:
-
-```text
-assert generated_task.task_id in role_analysis.applicable_task_ids
-```
-
-Required result:
-
-```text
-invalid_task_count == 0
-```
-
-Testing SHALL inject an unknown task ID into a candidate plan and verify that:
-
-* Compliance Checker returns `REJECT`;
-* `all_tasks_traceable == false`;
-* Document Writer does not run;
-* no approved documents are emitted.
-
-Document-level validation SHALL also verify that rendered task titles/descriptions correspond to the catalog entry identified by each task ID.
-
----
-
-# 14. Validation Test Matrix
-
-Minimum acceptance coverage SHALL include:
-
-### Valid Happy Paths
-
-One successful generation for each of:
-
-* UI Designer
-* UX Researcher
-* Product Manager
-* Developer
-* Engineer
-
-### Invalid Inputs
-
-* missing role;
-* unsupported role;
-* blank department;
-* missing start date;
-* malformed start date;
-* impossible calendar date.
-
-### Compliance Failures
-
-* missing mandatory compliance task;
-* missing mandatory provisioning task;
-* invented task ID;
-* task for wrong role;
-* duplicate task;
-* invalid bucket assignment;
-* priority-rule violation.
-
-### Retry Tests
-
-* initial candidate passes: 0 retries;
-* initial fails, retry 1 passes;
-* attempts 1 and 2 fail, retry 2 passes;
-* all three candidate evaluations fail: terminal failure;
-* verify no fourth Builder attempt occurs.
-
-### Output Tests
-
-Successful run:
-
-* exactly two required Markdown artifacts generated;
-* plan contains 30/60/90 sections;
-* checklist reflects approved task IDs;
-* role/department/start date correct.
-
-Failed run:
-
-* no approved plan generated;
-* no manager checklist generated;
-* failure reason visible;
-* non-success CLI status returned.
-
----
-
-# 15. Scope Boundaries
-
-## In Scope
-
-* role-aware onboarding-plan generation;
-* five supported roles;
-* shared and role-specific task-set selection;
-* defined sequencing priority;
-* 30/60/90 organization;
-* compliance validation;
-* provisioning-task validation;
-* manager checklist generation;
-* CLI workflow;
-* Markdown output;
-* CrewAI multi-agent coordination;
-* future integration adapter interfaces.
-
-## Out of Scope
-
-* live HR integration;
-* live IT/identity integration;
-* account provisioning;
-* task execution;
-* completion tracking;
-* workflow notifications;
-* employee reminders;
-* exact deadline inference beyond 30/60/90 buckets;
-* onboarding analytics dashboard;
-* new roles;
-* automatic generation of catalog tasks;
-* autonomous legal/compliance interpretation;
-* performance evaluation.
-
-Any development agent proposing an out-of-scope item SHALL classify it as Future Work rather than adding it to MVP requirements.
-
----
-
-# 16. Implementation Strategy
-
-## Phase 1 — Define
-
-Completed/current:
-
-* MRD
-* PRD
-
-Remaining before architecture boundary approval:
-
-* populate authoritative task catalog;
-* resolve task-set ownership;
-* define exact role-task applicability.
-
-## Phase 2 — Build
-
-Recommended implementation order:
-
-1. task schemas and catalog validation;
-2. CLI/input validation;
-3. structured handoff models;
-4. Role Analyst;
-5. Plan Builder;
-6. Compliance Checker;
-7. deterministic retry controller;
-8. Document Writer;
-9. Markdown templates;
-10. acceptance and adversarial tests;
-11. future integration adapter interfaces.
-
-## Phase 3 — Deliver
-
-Deployment packaging, operational runbook, environment configuration, and release management belong to downstream architecture/build/delivery personas and are not specified here.
-
----
-
-# 17. Assumptions
-
-**A1 — Ramp baseline.** Manual onboarding ramp time is assumed to be **three weeks**. This is not measured organizational data.
-
-**A2 — Task catalogs.** The approved task catalog will be supplied before production acceptance. Current task sets are placeholders only.
-
-**A3 — Department behavior.** Department is required as input and may affect future task applicability, but no authoritative department enumeration has been supplied.
-
-**A4 — Local output.** Markdown files may be written to a local/configured filesystem in MVP because no document-management integration was requested.
-
-**A5 — CLI operator.** The CLI is operated by an authorized manager, onboarding coordinator, developer, or evaluator. Authentication is not included in MVP because the application has no live enterprise integrations.
-
-**A6 — First-party task authority.** The future task catalog, once stakeholder-approved, is the authoritative source for onboarding requirements. Language-model world knowledge is not an acceptable source of onboarding tasks.
-
-No additional quantitative market, cost, performance, throughput, or staffing figures are assumed.
-
----
-
-# 18. Open Questions
-
-The following do not block PRD structure but must be resolved before production-readiness:
-
-1. What are the actual tasks in each placeholder task set?
-2. Who owns approval and maintenance of each task set?
-3. Are any tasks department-specific within AI Engineering?
-4. What defines "ramp complete" for each of the five roles?
-5. How will the assumed three-week baseline be replaced with measured data?
-6. Should task source references point to policies, internal documentation, ticket templates, or another authority?
-7. Should generated Markdown expose raw task IDs to end users or only in an audit appendix?
-8. Which LLM provider/model will be configured beneath CrewAI?
-9. What exact local/configured output path convention should downstream implementation adopt?
-
-These questions SHALL NOT be resolved by development agents through invention.
-
----
-
-# 19. Development Guardrails
-
-Development agents SHALL treat the following as non-negotiable product invariants:
+## Development Guardrails (invariants)
 
 ```text
 SUPPORTED_ROLES =
 {UI Designer, UX Researcher, Product Manager, Developer, Engineer}
 
 PRIORITY =
-COMPLIANCE_LEGAL
-> IT_PROVISIONING
-> ROLE_ENABLEMENT
-> TEAM_INTEGRATION
+COMPLIANCE_LEGAL > IT_PROVISIONING > ROLE_ENABLEMENT > TEAM_INTEGRATION
 
 MAX_BUILDER_RETRIES = 2
 
-APPROVED_OUTPUT_REQUIRES =
-ComplianceResult.status == PASS
+APPROVED_OUTPUT_REQUIRES = ComplianceResult.status == PASS
 
-TASK_AUTHORITY =
-authoritative task catalog only
+TASK_AUTHORITY = authoritative task catalog only
 
-LIVE_INTEGRATIONS =
-none in MVP
+LIVE_INTEGRATIONS = none in MVP
+
+TASK_IDS_IN_USER_BODY = false (appendix only)
 ```
 
-If implementation constraints conflict with these invariants, development SHALL escalate the conflict rather than silently changing product behavior.
+Conflicts with these invariants SHALL be escalated, not silently changed.
 
----
+## PRD Acceptance Criteria (MVP implemented when)
 
-# 20. PRD Acceptance Criteria
-
-The PRD is considered implemented for MVP only when:
-
-* all five supported roles generate plans from defined task fixtures;
+* all five roles generate plans from defined task fixtures;
 * invalid inputs fail before agent execution;
 * every inter-agent handoff conforms to a structured schema;
 * priority rules are enforced;
@@ -1473,38 +681,103 @@ The PRD is considered implemented for MVP only when:
 * the Checker cannot be bypassed;
 * no more than two Builder retries occur;
 * retry exhaustion produces terminal failure;
-* the Writer executes only after `PASS`;
+* the Writer executes only after PASS;
 * successful runs generate both Markdown documents;
 * failed runs generate neither approved document;
 * future HRIS/IdP interfaces remain decoupled from agent logic;
-* automated tests prove traceability and mandatory coverage requirements.
+* automated tests prove traceability and mandatory coverage;
+* task IDs are not shown inline in plan/checklist body.
 
 ---
 
-# 21. Sources
+# 9. Launch & Go-to-Market Strategy
 
-**Product requirements source:** Stakeholder instructions in the `*create-prd` request and subsequent clarification that task sets should remain placeholders and technical architecture should receive emphasis.
+N/A — internal operational tool for AI Engineering. No external launch, pricing, or sales motion.
 
-**Market/product context:** Automated Employee Onboarding Workflow MRD produced during the Define phase.
-
-**CrewAI runtime:** CrewAI official documentation. CrewAI documents sequential process orchestration, task-level structured outputs including Pydantic/JSON, and task guardrail retry configuration.
-
-No competitor figures or external market-size figures are required to establish the technical MVP requirements in this PRD.
+Internal “launch” is: catalog approved → QA pass → security assessment → operator-authorized deploy/runbook and user guide. Promotion remains a Deliver-phase operational decision.
 
 ---
 
-# 22. Audit
+# Quality Assurance Checklist
 
-**Timestamp:** 2026-08-09
+- [x] Requirements traceable to MRD, prior PRD MVP scope, SAD stakeholder decisions SD-1–SD-8, or recorded Assumptions
+- [x] Technical specifications feasible with the selected runtime adapter (`crewai`)
+- [x] Success metrics aligned with stated objectives (coverage, zero invention, hypothesized ramp reduction)
+- [x] MVP vs Future Work boundaries explicit
+- [x] Market TAM/GTM marked N/A because this is an internal tool (MRD was not skipped)
+
+---
+
+# Sources
+
+1. `project-context/1.define/mrd.md` — market problem evidence, internal-tool framing, competitive alternatives, recommended bounded orchestration (MVP narrowed below MRD’s full journey).
+2. Prior `project-context/1.define/prd.md` (2026-08-09 `create-prd`) — MVP scope: CLI plan generation, four-agent validation gate, zero-invention catalog, retry rule, functional requirements.
+3. `project-context/1.define/sad.md` Stakeholder Decisions (2026-08-19) SD-1 through SD-8 — LLM, YAML catalog, output path, task-ID visibility, Developer vs Engineer, CLI name, department metadata-only, `source_reference` URL.
+4. `aamad.config.yml` — `runtime.target: crewai`, Python, type checking, security assessment, user guide, unit and integration tests.
+5. `.cursor/templates/prd-template.md` — required PRD structure.
+6. CrewAI adapter rule `.cursor/rules/adapter-crewai.mdc` — YAML agents/tasks, sequential process, `max_iter`, memory default, structured outputs (implementation convention, not a market source).
+7. MRD-cited external research: Gallup onboarding studies; SHRM onboarding roles/measurement; BambooHR 2023–2024 onboarding/HR research; vendor capability pages for Workday, ServiceNow, Rippling, Deel, Microsoft Entra, Okta, Zapier (see MRD Sources for URLs).
+
+No competitor revenue or market-size figures are used as product requirements.
+
+---
+
+# Assumptions
+
+**A1 — Ramp baseline.** Manual onboarding ramp time is assumed to be **three weeks**. This is not measured organizational data. The 30% reduction target is stakeholder-defined, not an external benchmark.
+
+**A2 — Task catalogs.** The approved task catalog will be supplied before production acceptance. Current task sets are placeholders only.
+
+**A3 — Department behavior.** Department is a required input and is recorded on outputs. For MVP it does not filter task applicability (SD-7). Future department-specific tasks remain unspecified.
+
+**A4 — Local output.** Markdown files may be written to a local/configured filesystem because no document-management integration was requested. Default path `./output/` (SD-3).
+
+**A5 — CLI operator.** The CLI is operated by an authorized manager, onboarding coordinator, developer, or evaluator. Authentication is not in MVP because there are no live enterprise integrations.
+
+**A6 — First-party task authority.** Once stakeholder-approved, the task catalog is the only acceptable source of onboarding requirements. Model world knowledge is not an acceptable source.
+
+**A7 — MRD skip.** MRD was **not** skipped. Broader MRD journey items (live orchestration, reminders, progress tracking) are Future Work, not silent MVP expansion.
+
+**A8 — Runtime resolution.** `AAMAD_TARGET_RUNTIME` was unset; `aamad.config.yml` `runtime.target: crewai` is the resolved adapter. Product definition remains the workflow/catalog contract.
+
+**A9 — UI config.** Visual UI settings in `aamad.config.yml` are unused for CLI MVP.
+
+**A10 — No additional quantitative market, cost, performance, throughput, or staffing figures** are assumed beyond A1.
+
+---
+
+# Open Questions
+
+These do not block PRD structure. They MUST be resolved before production-valid plans. Development agents SHALL NOT resolve them by invention.
+
+1. What are the actual tasks in each placeholder task set?
+2. Who owns approval and maintenance of each task set?
+3. After MVP, should any tasks become department-specific within AI Engineering?
+4. What defines “ramp complete” for each of the five roles?
+5. How will the assumed three-week baseline be replaced with measured data?
+6. Which specific policies or documents should `source_reference` URLs point to (the field format is URL; the corpus is unset)?
+7. How many hires per year occur in each of the five roles (needed for ROI, not for CLI acceptance)?
+8. What employee data may be retained in run diagnostics, and for how long?
+9. Which geographic/compliance jurisdictions apply to catalog content?
+
+Resolved since the 2026-08-09 PRD and therefore **not** repeated as open: LLM provider/model (SD-1); output path convention (SD-3); task-ID visibility (SD-4); Developer vs Engineer as distinct roles (SD-5); CLI name (SD-6); department filtering (SD-7); `source_reference` type (SD-8).
+
+---
+
+# Audit
+
+**Timestamp:** 2026-08-20
 **Persona ID:** `product-mgr`
 **Action:** `create-prd`
 **Artifact:** `project-context/1.define/prd.md`
 **MRD:** Required and completed; not skipped
-**Runtime:** `crewai`
-**Process:** Sequential with validation gate
-**Compliance retry rule:** Maximum 2 returns to Plan Builder after initial candidate
+**System description:** Absent
+**Resolved `AAMAD_TARGET_RUNTIME`:** `crewai` (env unset; `aamad.config.yml` `runtime.target: crewai`)
+**LLM (product constraint from SD-1):** OpenAI `gpt-4o`; temperature and token caps remain Build/setup Audit items
+**Process:** Sequential with validation gate; max 2 Builder retries after initial candidate
 **Supported roles:** UI Designer, UX Researcher, Product Manager, Developer, Engineer
 **Task catalog:** Placeholder interfaces only; task content unresolved
-**Quantitative assumption:** Three-week manual ramp baseline
-**Success target:** 30% ramp-time reduction against that assumed baseline
-**Context boundary:** Approved for architecture handoff only with the explicit constraint that development agents must not invent task-catalog contents.
+**Quantitative assumption:** Three-week manual ramp baseline; 30% reduction target
+**Prompt Trace:** Omitted — this artifact is a Define-phase requirements document, not a production model run; no prompts were executed against a live LLM API to populate catalog content
+**Context boundary:** Approved for architecture/build handoff with the explicit constraint that development agents must not invent task-catalog contents
+**Template compliance:** Headings aligned to `.cursor/templates/prd-template.md` (Executive Summary through Launch, plus Quality Assurance Checklist, Sources, Assumptions, Open Questions, Audit)
