@@ -1,0 +1,56 @@
+analyze_role:
+  agent: role_analyst
+  description: >
+    Select applicable onboarding task IDs for this hire.
+
+    Role: {role}
+    Department: {department}
+    Start date: {start_date}
+    Attempt: {attempt} of {max_attempts}
+    Previous compliance violations (empty on first attempt): {previous_violations}
+
+    Authoritative catalog (JSON array). You MUST choose a subset of these ids.
+    Do not invent ids, titles, or tasks.
+
+    {catalog_json}
+
+    Return JSON only: {"task_ids": ["COMP-001", "..."]}
+  expected_output: >
+    A JSON object with a single key task_ids whose value is an array of catalog
+    task ID strings. No markdown, no commentary.
+
+build_plan:
+  agent: plan_builder
+  description: >
+    Organize these selected task IDs into a 30/60/90-day plan.
+
+    Selected task IDs: {selected_task_ids}
+    Selected tasks with categories: {selected_tasks_json}
+    Attempt: {attempt} of {max_attempts}
+    Previous compliance violations (empty on first attempt): {previous_violations}
+
+    Rules:
+    - Use only the selected IDs. Never invent IDs.
+    - Put every selected ID in exactly one of day_30, day_60, day_90.
+    - Prefer compliance tasks in day_30.
+
+    Return JSON only: {"day_30": [], "day_60": [], "day_90": []}
+  expected_output: >
+    A JSON object with keys day_30, day_60, and day_90, each an array of task
+    ID strings. No markdown, no commentary.
+
+check_compliance:
+  agent: compliance_checker
+  description: >
+    Do not decide pass/fail. The application calls check_compliance() in Python.
+    If asked to explain a FAIL, restate the provided violation strings in plain language.
+  expected_output: >
+    Unused for pass/fail. Deterministic ComplianceResult from application code.
+
+write_documents:
+  agent: document_writer
+  description: >
+    Placeholder. File writing is not implemented in this step. After PASS, log
+    that files are ready to write.
+  expected_output: >
+    The exact phrase: compliance passed, ready to write files

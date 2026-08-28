@@ -8,8 +8,8 @@
 **Target organization:** AI Engineering
 **Selected runtime:** CrewAI
 **Resolved `AAMAD_TARGET_RUNTIME`:** `crewai` (environment unset; `aamad.config.yml` `runtime.target: crewai`)
-**Primary interface:** Command-line interface (CLI) `onboard`
-**Status:** Architecture handoff candidate; aligned to 2026-08-20 template-aligned PRD; task catalog content unresolved
+**Primary interface:** CLI `onboard` (SD-6); minimal UI wrap at `src/onboarding-ui/` (SD-10)
+**Status:** Architecture handoff candidate; aligned to 2026-08-20 template-aligned PRD; Developer catalog content supplied 2026-08-27; other roles remain placeholder; application code consolidated under `src/` (2026-08-28)
 
 ---
 
@@ -27,6 +27,8 @@ Recorded here as the architectural decision log. The 2026-08-20 PRD absorbs SD-1
 | SD-6 | CLI executable name | `onboard` |
 | SD-7 | Department applicability | Metadata only for MVP; does not filter task selection |
 | SD-8 | `source_reference` format | URL string |
+| SD-10 | Frontend / UI Requirement | The onboarding-plan tool will include a frontend UI, in addition to the existing CLI. The UI wraps the existing CLI/agent core rather than replacing it — the underlying models, catalog loader, four-agent crew, and deterministic compliance checker remain unchanged and are called by the UI, not rebuilt for it. Date: August 27, 2026. Raised by: Professor Carmelo Iaria, in a follow-up meeting after the initial SAD review. Supersedes: prior CLI-only framing implied by SD-4 (CLI name `onboard`). SD-4 is not reversed — the CLI remains the underlying interface and stays available for testing/automation — this decision adds a UI layer on top of it. Scope: minimal UI — one screen with a form for the three inputs (role, department, start date), and a results view showing either the two generated files (on compliance PASS) or a clear failure reason (on compliance FAIL). No additional functionality beyond what the CLI already exposes. Sequencing: UI work begins only after the Developer happy path is fully proven via the CLI (Steps 1–7: models, catalog loader, CLI, deterministic compliance rules, four-agent crew, Markdown generation, automated tests). The UI is an interface change, not a product-logic change, and is not built concurrently with unproven compliance logic. Rationale: keeps the trust-boundary architecture (catalog-only tasks, fail-closed compliance, agent role separation) fully intact regardless of interface. Avoids rework of already-completed and tested build steps. Reduces risk by not introducing two unproven components (compliance logic + new UI) at the same time. |
+| SD-9 | Developer task catalog | Compact source `project-context/2.build/developer-tasks.yaml`; normalized one-file-per-set copies under `project-context/2.build/task_catalog/` |
 
 ---
 
@@ -43,6 +45,8 @@ This SAD specifies the MVP system architecture for a CrewAI-based multi-agent ap
 | MRD | `project-context/1.define/mrd.md` | Complete (required; not skipped) |
 | User stories | `project-context/1.define/user-stories/` | Not present |
 | Project config | `aamad.config.yml` | Present (`runtime.target: crewai`, `language.primary: python`) |
+| Developer catalog (source) | `project-context/2.build/developer-tasks.yaml` | Compact stakeholder YAML (15 tasks) |
+| Task catalog (normalized) | `project-context/2.build/task_catalog/` | PRD `TaskDefinition` split; Developer content only |
 
 ---
 
@@ -58,7 +62,7 @@ This SAD specifies the MVP system architecture for a CrewAI-based multi-agent ap
 | **Fail closed** | Terminal compliance failure produces no approved onboarding artifacts (FR-010). |
 | **Observable by default** | Each workflow run records `workflow_id`, handoff payloads, validation findings, retry count, and final status for auditability (PRD §3 Infrastructure). |
 | **Adapter isolation** | Employee context acquisition and future HRIS/IdP integrations are isolated behind `EmployeeContextProvider`; agent logic remains vendor-agnostic (FR-014). |
-| **Minimal viable surface** | MVP is a CLI batch tool with local Markdown output. No web UI, no live enterprise integrations, no task execution. |
+| **Minimal viable surface** | MVP is a CLI batch tool with local Markdown output. SD-10 adds a single-screen UI that calls the same core; no live enterprise integrations, no task execution. |
 | **Correctness over completeness** | Prefer fail-closed non-success over emitting a plan that violates mandatory coverage or traceability (PRD §5). |
 
 ## 1.2 Core vs Future Features
@@ -68,7 +72,7 @@ This SAD specifies the MVP system architecture for a CrewAI-based multi-agent ap
 - CLI `onboard` accepting `role`, `department`, `start_date` (FR-001)
 - Pre-flight input validation; crew never invoked on invalid input (FR-002)
 - Authoritative task-catalog loader with startup structural/schema validation (FR-015)
-- Placeholder task-set interfaces only; content supplied by stakeholder; placeholders are development-only and SHALL NOT be treated as production-valid (FR-015, PRD A2)
+- Authoritative task-set YAML (one file per set). **Developer** content is stakeholder-supplied (SD-9). UI Designer, UX Researcher, Product Manager, Engineer, and `shared_tasks` remain empty placeholders and SHALL NOT be treated as production-valid (FR-015, PRD A2)
 - Four specialized CrewAI agents in sequential process (PRD §3)
 - Structured Pydantic handoffs between all agent boundaries (PRD §3)
 - Deterministic retry controller (`max_builder_retries = 2` after initial candidate; three evaluations maximum) (FR-009)
@@ -79,6 +83,7 @@ This SAD specifies the MVP system architecture for a CrewAI-based multi-agent ap
 - `CliEmployeeContextProvider` adapter (FR-014)
 - Unit and integration tests mapped to acceptance criteria (`aamad.config.yml` `testing.*`; PRD §7 Validation Test Matrix)
 - Type checking (`coding_standards.type_checking: true`)
+- Minimal onboarding UI wrapping the CLI/API core (SD-10): `src/onboarding-ui/` plus FastAPI `src/onboarding/api.py`. Does not replace `onboard`.
 
 ### Should Have (P1 — implement if they do not expand P0 scope)
 
@@ -100,7 +105,7 @@ From PRD §4 Future Features. Any proposal of these items SHALL be classified as
 
 | Capability | Rationale for deferral |
 | ---------- | ---------------------- |
-| Web / chat UI | PRD §6; `aamad.config.yml` UI keys are unused (PRD A9) |
+| Rich chat UI, extra screens, pause/cancel | PRD §6; SD-10 covers only a single form + results page wrapping the existing core |
 | Live HRIS integration | PRD §3 Integration; adapter boundary only |
 | Live identity-provider integration | PRD §3 Integration |
 | Account provisioning and permission assignment | PRD P2 / non-goals |
@@ -128,7 +133,7 @@ From PRD §4 Future Features. Any proposal of these items SHALL be classified as
 | Process model | Sequential forward path; retry loop in application orchestrator | Ordered Role Analyst → Plan Builder → Compliance Checker → Document Writer | PRD §3 |
 | Agent count | 4 | PRD-defined specialization with distinct validation boundaries | PRD §3 Core Agent Definitions |
 | Delegation | `allow_delegation=false` | PRD §3; no manager pattern justified | PRD §3 |
-| Interface | CLI only | No frontend MVP; operator invokes batch generation | PRD §6, FR-001 |
+| Interface | CLI `onboard` plus SD-10 UI wrap | CLI remains the underlying interface; UI calls the same core via HTTP | PRD §6, FR-001, SD-10 |
 | Persistence | None (filesystem only) | Catalog and outputs are local files; no database | PRD §3 Integration |
 | Inter-agent data format | Pydantic models / JSON schemas | Reduces parsing ambiguity; malformed output is a failed stage | PRD §3 |
 | Streaming | Not required | Batch CLI; success/failure reported after completion | PRD §6 |
@@ -146,9 +151,11 @@ From PRD §4 Future Features. Any proposal of these items SHALL be classified as
 | Type checking | Required | `coding_standards.type_checking: true` | Config; PRD §5 |
 | Max file lines | Prefer ≤ 400 | Split modules unless clarity suffers | Config; PRD §5 |
 
-### Frontend decision (N/A with rationale)
+### Frontend decision (SD-10)
 
-The PRD explicitly scopes MVP to a command-line interface. **No web frontend is in MVP scope.** `aamad.config.yml` UI keys (`theme`, `visual_style`, `prefer_modals`) SHALL NOT be used to justify adding a graphical UI (PRD A9). Build-phase `@frontend.eng` work is **not required** for MVP acceptance. The CLI layer is the MVP “frontend” in the AAMAD module sequence (PRD §8).
+The PRD originally scoped MVP to CLI only. **SD-10 (2026-08-27)** adds a minimal UI that wraps the existing CLI/agent core rather than replacing it. Scope: one screen with role / department / start date, and a results view for the two Markdown files (PASS) or a failure reason (FAIL). Implementation: `src/onboarding-ui/` (port 5174) calling `src/onboarding/api.py`.
+
+`aamad.config.yml` UI keys SHALL NOT be used to justify extra screens, chat, or theming beyond that wrap. `src/frontend/` is a separate Critical Research Workflow prototype and is **not** the onboarding product.
 
 ---
 
@@ -420,7 +427,7 @@ Secrets MUST NOT appear in task catalogs, Markdown outputs, or Prompt Trace.
 
 ## 3.1 Scope determination
 
-**Not applicable for MVP.** The PRD specifies a command-line interface as the sole operator surface (PRD §6). No web application, chat UI, or graphical frontend is required.
+**CLI remains primary (SD-6).** **SD-10** adds a minimal graphical wrap: `src/onboarding-ui/` (Vite + React + TypeScript, port 5174). No chat UI, no extra routes, no pause/cancel. The Critical Research Workflow app at `src/frontend/` (port 5173) is out of onboarding product scope.
 
 ## 3.2 CLI as the primary interface
 
@@ -430,7 +437,7 @@ The CLI layer fulfills the "frontend" responsibility for operator interaction. H
 
 | Component | Selection | Source |
 | --------- | --------- | ------ |
-| CLI framework | TBD (`argparse` stdlib minimum; `typer` or `click` acceptable per `@project.mgr` setup) | Implementation decision |
+| CLI framework | `click` (`onboard` console script in `pyproject.toml`) | Implemented; recorded in `setup.md` |
 | Language | Python 3.11+ | `aamad.config.yml` |
 | Output | stdout/stderr + local Markdown files | PRD §6 |
 
@@ -481,68 +488,43 @@ Not applicable to CLI MVP. Future web UI would require WCAG considerations.
 
 ## 4.1 Application structure
 
-The MVP is a **Python CLI application** with no HTTP server. "Backend" refers to the orchestration, validation, and CrewAI runtime layer.
+The product core is a **Python package** (`src/onboarding/`) exposing CLI `onboard` and a thin FastAPI wrap for SD-10. Vite apps also live under `src/`. Prefer files at or below `max_file_lines: 400`. Type checking is required.
 
-Prefer files at or below `max_file_lines: 400` unless a module cannot be split without harming clarity. Type checking is required.
+**Implemented layout (stakeholder 2026-08-28: all application code under `src/`):**
 
 ```text
-onboarding-workflow/                 # generated application root (TBD naming)
-├── pyproject.toml
+aamad-project/
+├── pyproject.toml                   # src-layout; packages.find include = ["onboarding*"]
 ├── .env.example
 ├── config/
 │   ├── agents.yaml
-│   ├── tasks.yaml
-│   └── task_catalog/                # authoritative task sets (stakeholder-populated)
-│       ├── shared_tasks.yaml
-│       ├── compliance_legal_tasks.yaml
-│       ├── it_provisioning_tasks.yaml
-│       ├── ui_designer_tasks.yaml
-│       ├── ux_researcher_tasks.yaml
-│       ├── product_manager_tasks.yaml
-│       ├── developer_tasks.yaml
-│       ├── engineer_tasks.yaml
-│       └── team_integration_tasks.yaml
+│   └── tasks.yaml
 ├── src/
-│   ├── cli/
-│   │   └── main.py                  # entrypoint, argument parsing
-│   ├── adapters/
-│   │   ├── employee_context.py      # EmployeeContextProvider protocol
-│   │   └── cli_employee_context.py  # CliEmployeeContextProvider
-│   ├── catalog/
-│   │   ├── loader.py
-│   │   ├── validator.py
-│   │   └── repository.py
-│   ├── models/
-│   │   ├── enums.py                 # SupportedRole, TaskCategory, Bucket
-│   │   ├── task_definition.py
-│   │   ├── handoffs.py              # OnboardingRequest, RoleAnalysis, etc.
-│   │   └── workflow_context.py
-│   ├── validation/
-│   │   ├── compliance_rules.py      # deterministic checks
-│   │   └── schema_validators.py
-│   ├── orchestrator/
-│   │   ├── workflow.py              # state machine, retry controller
-│   │   └── diagnostics.py
-│   ├── rendering/
-│   │   └── markdown_templates.py
-│   └── crew/
-│       ├── crew.py                    # CrewAI crew factory
-│       └── tools/
-│           └── catalog_reader.py      # read-only catalog tool
-└── tests/
-    ├── unit/
-    ├── integration/
-    └── fixtures/
-        └── task_catalog/              # test fixtures (not production content)
+│   ├── onboarding/                  # Python package (CLI, API, catalog, crew, compliance)
+│   │   ├── cli.py                   # onboard entrypoint (SD-6)
+│   │   ├── api.py                   # FastAPI wrap of run_onboarding (SD-10)
+│   │   ├── catalog.py
+│   │   ├── models.py
+│   │   ├── compliance.py
+│   │   ├── workflow.py
+│   │   ├── rendering.py
+│   │   ├── crew_runtime.py
+│   │   └── stubs.py
+│   ├── onboarding-ui/               # Onboarding Vite + React UI (port 5174)
+│   └── frontend/                    # Critical Research Workflow prototype (port 5173)
+├── tests/                           # Python tests at repo root
+└── project-context/2.build/
+    ├── developer-tasks.yaml
+    └── task_catalog/                # normalized one-file-per-set copies
 ```
 
-Directory layout is a **recommended scaffold** for build personas; exact paths are an implementation detail unless stakeholder specifies otherwise.
+An earlier nested scaffold (`src/cli/`, `src/catalog/`, `config/task_catalog/` as the loader root) was a recommendation only. The stakeholder specified consolidation under `src/`. Catalog YAML currently loads from `project-context/2.build/` (see SA-17).
 
 Development agents MUST NOT populate placeholder YAML with model-generated onboarding tasks (PRD §3 Authoritative Task-Set Model).
 
 ## 4.2 API architecture
 
-**No HTTP API in MVP.** PRD §3 specifies CLI input and local Markdown output only.
+**CLI remains the product contract (PRD §3, FR-001).** SD-10 adds a **thin HTTP wrap** so the UI can call the same `run_onboarding` core. Paths and JSON live in `project-context/1.define/onboarding-backend-spec.md`. Implementation: `src/onboarding/api.py` (`POST /runs`, `GET /runs/{runId}`). This is not a second crew and not a research-run API.
 
 Future adapter boundary (not implemented as a live integration):
 
@@ -583,11 +565,13 @@ Allowed `category` values: `COMPLIANCE_LEGAL`, `IT_PROVISIONING`, `ROLE_ENABLEME
 
 **Format decisions (SD-2, SD-8):**
 
-- One YAML file per task set under `config/task_catalog/` (nine files per PRD §3)
-- `source_reference` MUST be a URL string pointing to the authoritative policy or document (SD-8). The corpus of which URLs to use is unresolved (PRD Open Question 6)
+- One YAML file per task set. **Define/Build staging path:** `project-context/2.build/task_catalog/` (SD-9). Runtime default remains `./config/task_catalog/` once the application is scaffolded (SA-1)
+- `source_reference` MUST be a URL string pointing to the authoritative policy or document (SD-8). Developer sources currently use `https://intranet.example.com/...` placeholders (PRD Open Question 6 still open for the real corpus)
 - `applicable_departments` remains in schema for future use; MVP Role Analyst ignores department for filtering (SD-7)
 
 **Role-specific task sets (SD-5):** `Developer` and `Engineer` are distinct `SupportedRole` values. Applicability uses `developer_tasks.yaml` vs `engineer_tasks.yaml` respectively—never a shared ambiguous role bucket.
+
+**Developer catalog inventory (SD-9):** 15 stakeholder tasks, split as COMP-001–004 → `compliance_legal_tasks.yaml`; IT-001–004 → `it_provisioning_tasks.yaml`; ROLE-001–004 → `developer_tasks.yaml`; TEAM-001–003 → `team_integration_tasks.yaml`. All have `applicable_roles: [Developer]` only. Compact source field names (`id`, `category: compliance|it_setup|role_work|team_intro`, `source`) are not the runtime schema.
 
 Startup validation SHALL fail if (FR-015):
 
@@ -643,7 +627,7 @@ MVP requires **no HRIS, IdP, or operator authentication** (PRD A5). LLM provider
 
 ## 5.1 Deployment model
 
-The MVP deploys as a **standalone Python CLI tool** runnable on a developer or coordinator workstation, or in CI for automated acceptance tests. Cloud hosting is Future Work for Deliver (PRD §3 Infrastructure).
+The MVP deploys as a **local Python application**: CLI `onboard` plus optional SD-10 UI (`src/onboarding-ui/` + `uvicorn onboarding.api:app`) on a developer or coordinator workstation, or CLI in CI for automated acceptance tests. Cloud hosting is Future Work for Deliver (PRD §3 Infrastructure).
 
 | Aspect | MVP approach |
 | ------ | ------------ |
@@ -919,7 +903,7 @@ MVP is implemented when all PRD §8 Acceptance Criteria are met. Architecture ma
 
 MVP is ready for internal operational use when:
 
-1. Stakeholder-approved task catalog replaces placeholders (PRD A2, Open Question 1)
+1. Stakeholder-approved task catalog replaces placeholders for **all five roles** (PRD A2). Developer content is supplied (SD-9); other roles remain open (OQ-1)
 2. All PRD §8 acceptance criteria pass in automated tests
 3. One successful plan generated for each of the five roles using the production catalog
 4. Security assessment complete (`security.md`) or gap explicitly accepted
@@ -970,11 +954,11 @@ Recommended build order (PRD §8 Phase 2, refined for architecture):
 | Module | Epic focus |
 | ------ | ---------- |
 | Module 1 | Agent/task YAML definitions + crew.kickoff() against fixtures |
-| Module 2 | Catalog repository + validation + adapter interfaces (no HTTP API) |
-| Module 3 | CLI + Markdown rendering (CLI is the MVP “frontend”; invokes orchestrator directly) |
+| Module 2 | Catalog repository + validation + adapter interfaces; optional FastAPI wrap for SD-10 |
+| Module 3 | CLI + Markdown rendering; SD-10 UI at `src/onboarding-ui/` invokes the HTTP wrap |
 | Module 4 | End-to-end validation against PRD §7 test matrix and §8 acceptance criteria |
 
-**Frontend epic (`@frontend.eng`):** Not applicable for current PRD scope.
+**Frontend epic (`@frontend.eng`):** `src/onboarding-ui/` (SD-10). `src/frontend/` is the unrelated Critical Research Workflow prototype.
 
 **Invariants (conflicts SHALL be escalated, not silently changed):**
 
@@ -1002,7 +986,7 @@ TASK_IDS_IN_USER_BODY = false (appendix only)
 
 - [x] PRD requirements mapped to architectural components (FR-001–FR-016)
 - [x] Agents designed for domain and CrewAI runtime (4 agents, sequential + retry loop)
-- [x] CLI contract defined; no FE/BE schema mismatch (no HTTP API)
+- [x] CLI contract defined; SD-10 HTTP wrap documented (`onboarding-backend-spec.md`); CRW prototype kept separate
 - [x] Secrets via env vars only
 - [x] MVP vs Future Work boundaries explicit (P0 / P1 / P2)
 - [x] Resolved `AAMAD_TARGET_RUNTIME=crewai` recorded in Audit (env unset; config `runtime.target`)
@@ -1015,7 +999,8 @@ TASK_IDS_IN_USER_BODY = false (appendix only)
 - [x] Developer/Engineer distinction confirmed (separate task sets — SD-5)
 - [x] `source_reference` format confirmed (URL string — SD-8)
 - [x] Handoff schemas aligned to 2026-08-20 PRD §3 field lists
-- [ ] Task catalog **content** approved by stakeholder
+- [x] Task catalog **content** for Developer supplied (SD-9; 15 tasks)
+- [ ] Task catalog **content** for UI Designer, UX Researcher, Product Manager, Engineer (and any shared tasks) still placeholder
 - [ ] Security assessment (`@security.eng`) — Build/Deliver phase
 - [ ] User guide (`@devops.eng`) — Deliver phase
 
@@ -1033,6 +1018,7 @@ TASK_IDS_IN_USER_BODY = false (appendix only)
 | CrewAI adapter rule | `.cursor/rules/adapter-crewai.mdc` | YAML config, sequential process, logging, guardrails |
 | AAMAD core rule | `.cursor/rules/aamad-core.mdc` | Artifact contracts, determinism, audit sections |
 | Stakeholder clarifications | Operator input 2026-08-19 | SD-1 through SD-8 decisions |
+| Developer catalog | `project-context/2.build/developer-tasks.yaml` | Operator-supplied Developer tasks (2026-08-27); SD-9 |
 
 User stories: **not present** — traceability is to PRD section IDs and functional requirement IDs (FR-001–FR-016).
 
@@ -1050,13 +1036,15 @@ User stories: **not present** — traceability is to PRD section IDs and functio
 | SA-6 | Test fixtures may contain synthetic task IDs for development; production catalog is stakeholder-owned | Test/production separation (FR-015) |
 | SA-7 | PRD Assumption A1 (3-week manual ramp baseline) carries forward for pilot metrics | Metric validity |
 | SA-8 | Department is metadata only in MVP; `applicable_departments` in catalog is not used for filtering until a future PRD revision | **Resolved for MVP — SD-7**; post-MVP department-aware filtering is PRD Open Question 3 |
-| SA-9 | No `@frontend.eng` epic is needed until/unless PRD adds a UI | Build phase scope (PRD A9) |
+| SA-9 | `@frontend.eng` epic is the SD-10 wrap at `src/onboarding-ui/`; `src/frontend/` is not the onboarding product | **Updated — SD-10; src/ consolidation 2026-08-28** |
 | SA-10 | Diagnostic logs persist under `project-context/2.build/logs/{workflow_id}/` during development | Path and retention may change; see PRD Open Question 8 |
 | SA-11 | Developer and Engineer use separate role-specific YAML task sets | **Resolved — SD-5** |
 | SA-12 | `source_reference` values in catalog are URL strings | **Resolved — SD-8**; URL corpus unset (PRD Open Question 6) |
 | SA-13 | CLI entry point is named `onboard` | **Resolved — SD-6** |
 | SA-14 | `AAMAD_TARGET_RUNTIME` remains unset; `aamad.config.yml` `runtime.target: crewai` is the resolved adapter | Matches PRD A8 |
 | SA-15 | Temperature ≤ 0.3 is an architecture recommendation, not a PRD numeric requirement | setup.md Audit owns the recorded value |
+| SA-16 | Compact Developer YAML maps as: `id`→`task_id`; `source`→`source_reference`; `compliance`→`COMPLIANCE_LEGAL`; `it_setup`→`IT_PROVISIONING`; `role_work`→`ROLE_ENABLEMENT`; `team_intro`→`TEAM_INTEGRATION`. Missing fields default to `applicable_roles: [Developer]`, `applicable_departments: ["*"]`, `mandatory: true`, `allowed_buckets: [30]`, `active: true`, `version: "1.0"`. COMP/IT/TEAM items stay out of `developer_tasks.yaml` (role-enablement only) | If COMP/IT/TEAM should apply to other roles, or some tasks are optional / 60- or 90-day, catalog and Role Analyst results change |
+| SA-17 | Staging catalog path is `project-context/2.build/task_catalog/` until `@project.mgr` / `@backend.eng` copy it into the generated app `config/task_catalog/` | Loader default path in SAD §4.5 still `./config/task_catalog/` |
 
 **Inherited from PRD (not independently verified):** A1–A10 in the PRD Assumptions section.
 
@@ -1084,7 +1072,7 @@ These match PRD Open Questions 1–9. They do not block SAD structure. They MUST
 
 | # | Question | Architectural impact | PRD ref |
 | - | -------- | -------------------- | ------- |
-| OQ-1 | What are the actual tasks in each placeholder task set? | Blocks production-valid output | PRD Open Question 1 |
+| OQ-1 | What are the actual tasks in each placeholder task set? | **Partial (2026-08-27):** Developer 15-task set supplied (SD-9). Still open: UI Designer, UX Researcher, Product Manager, Engineer, and `shared_tasks`. Production-valid plans for non-Developer roles remain blocked | PRD Open Question 1 |
 | OQ-2 | Who owns approval and maintenance of each task set? | Governance and change-control process | PRD Open Question 2 |
 | OQ-3 (post-MVP) | After MVP, should any tasks become department-specific within AI Engineering? | Future filtering rules; no MVP code change | PRD Open Question 3 |
 | OQ-4 | What defines “ramp complete” for each of the five roles? | Pilot success measurement | PRD Open Question 4 |
@@ -1093,6 +1081,7 @@ These match PRD Open Questions 1–9. They do not block SAD structure. They MUST
 | OQ-7 | How many hires per year occur in each of the five roles? | ROI only; not CLI acceptance | PRD Open Question 7 |
 | OQ-8 | What employee data may be retained in run diagnostics, and for how long? | Logging architecture and data minimization | PRD Open Question 8; SA-10 |
 | OQ-9 | Which geographic/compliance jurisdictions apply to catalog content? | Security/compliance scope of catalogued tasks | PRD Open Question 9 |
+| OQ-13 | Has the four-agent CrewAI crew been verified with a live LLM run? | **Open (2026-08-27):** The four-agent crew (Role Analyst, Plan Builder, Compliance Checker, Document Writer) is fully wired and the environment supports real CrewAI execution (Python 3.12 venv, CrewAI 1.15.17 installed, `crew.kickoff()` runs). No live LLM run has been completed yet — no `OPENAI_API_KEY` is configured, by choice, to avoid API costs during this phase of Build. All current tests (32 passing) use stubbed Role Analyst and Plan Builder outputs, not real LLM responses. The deterministic compliance logic (`check_compliance`) and retry loop are proven against stub outputs, not yet against real, unpredictable LLM output. Risk: stub tests confirm the code correctly rejects invented task IDs when given known/controlled input, but do not yet confirm this holds against a real LLM's actual behavior. Resolution: a live run will be completed once an API key is available (pending: shared course key, free-tier alternative, or a funded personal key), before this component is considered fully verified. | N/A — Build-phase live-run gate |
 
 ---
 
@@ -1100,21 +1089,33 @@ These match PRD Open Questions 1–9. They do not block SAD structure. They MUST
 
 | Field | Value |
 | ----- | ----- |
-| **Timestamp** | 2026-08-20 |
+| **Timestamp** | 2026-08-27 |
 | **Persona ID** | `system-arch` |
-| **Action** | `create-sad` (updated to align with 2026-08-20 template-aligned PRD) |
+| **Action** | `create-sad` (Developer catalog ingest; SD-9 / SA-16) |
 | **Artifact** | `project-context/1.define/sad.md` |
 | **Resolved `AAMAD_TARGET_RUNTIME`** | `crewai` (env unset; `aamad.config.yml` `runtime.target: crewai`) |
 | **LLM** | OpenAI `gpt-4o` via `OPENAI_API_KEY` (SD-1); temperature/token caps deferred to setup.md Audit |
 | **Process model** | Sequential CrewAI crew with application-level retry state machine |
 | **Agent count** | 4 (Role Analyst, Plan Builder, Compliance Checker, Document Writer) |
-| **Primary interface** | CLI `onboard` (SD-6); default output `./output/` (SD-3, FR-016) |
+| **Primary interface** | CLI `onboard` (SD-6); default output `./output/` (SD-3, FR-016); SD-10 UI at `src/onboarding-ui/` |
 | **Language** | Python (`aamad.config.yml`) |
 | **Functional requirements covered** | FR-001–FR-016 |
-| **Task catalog** | YAML one-file-per-set; content still placeholder |
+| **Task catalog** | YAML one-file-per-set; Developer content supplied (15 tasks); other roles placeholder |
 | **Department** | Metadata only; no applicability filtering (SD-7) |
 | **Task IDs in Markdown** | Audit appendix only (SD-4) |
 | **User stories** | None present |
 | **MRD referenced** | Yes (required; not skipped) |
 | **PRD version aligned** | 2026-08-20 `create-prd` (prior 2026-08-09 PRD comparison only) |
 | **Prompt Trace** | Not captured inline; SAD is architecture specification, not runtime execution |
+
+---
+
+## Audit (sync-docs 2026-08-28)
+
+| Field | Value |
+| ----- | ----- |
+| **Timestamp** | 2026-08-28 |
+| **Persona ID** | `project-mgr` (operator requested documentation sync after `src/` restructure) |
+| **Action** | `sync-docs` |
+| **What changed** | §4.1 implemented `src/` layout; §4.2 thin FastAPI wrap; §3 / Interface / SA-9 / Future Work aligned to SD-10; `src/onboarding-ui/` vs `src/frontend/` distinguished |
+| **Resolved `AAMAD_TARGET_RUNTIME`** | `crewai` (env unset; `aamad.config.yml` `runtime.target: crewai`) |

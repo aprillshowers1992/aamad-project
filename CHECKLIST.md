@@ -5,9 +5,29 @@ This checklist guides you step-by-step through running AAMAD from Phase 1 (Defin
 
 ---
 
+## This repository (2026-08-28)
+
+Application code lives under `src/` (`onboarding/`, `onboarding-ui/`, `frontend/`). See [`README.md`](README.md) and [`project-context/2.build/setup.md`](project-context/2.build/setup.md).
+
+| Step | Status |
+| ---- | ------ |
+| Install / Cursor init / `aamad.config.yml` | Done |
+| Runtime `crewai` (config; env unset) | Done |
+| Phase 1 MRD / PRD / SAD | Done |
+| Step 0 SAD | Done |
+| Step 1 `@project.mgr` `setup.md` | Done — code under `src/` |
+| Steps 2–4 code (CLI, API, onboarding UI) | Implemented; `frontend.md` / `backend.md` / `integration.md` not yet written |
+| Step 5 `qa.md` | Not started (41 pytest tests exist under `tests/`) |
+| Step 5.5 `security.md` | Not started (required before Deliver) |
+| Step 6 Deliver | Not started |
+
+Generic AAMAD boxes below stay as a reusable workflow. Prefer the table above for this repo’s current state.
+
+---
+
 ## Install and IDE layout
 
-- [ ] Install prerequisites (Python 3.9+, Node when your stack needs it; see [README.md](README.md)).
+- [ ] Install prerequisites (Python 3.11+, Node when your stack needs it; see [README.md](README.md) and [setup.md](project-context/2.build/setup.md)).
 - [ ] Install AAMAD: `pip install aamad` or `uv pip install aamad`.
 - [ ] Initialize framework files for your IDE (pick one):
 
@@ -170,9 +190,9 @@ Use the same persona invocation pattern as Phase 1 (Cursor `@name`, Claude Code 
 
 ### Step 7: Local MVP Launch
 
-- [ ] Follow docs in setup.md and integration.md to run the full MVP locally
-- [ ] Confirm MVP chat use case works end-to-end
-- [ ] Review all generated artifact files in project-context/2.build and 3.deliver
+- [ ] Follow docs in [setup.md](project-context/2.build/setup.md) (and integration.md when it exists) to run the full MVP locally
+- [ ] Confirm CLI `onboard` and/or `src/onboarding-ui/` (port 5174) against the API on port 8000
+- [ ] Review generated artifact files in project-context/2.build and 3.deliver
 
 ---
 

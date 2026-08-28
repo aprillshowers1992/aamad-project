@@ -26,3 +26,6 @@ Run `aamad validate` to check artifact quality gates.
 
 ## Agent Definitions
 See `.cursor/agents/` for Cursor agent definitions.
+
+## This product
+Application code is under `src/` (`onboarding` Python package, `onboarding-ui`, and the separate `frontend` research prototype). Environment and run commands: `project-context/2.build/setup.md`.

@@ -1,0 +1,69 @@
+# Normalized from project-context/2.build/developer-tasks.yaml (operator 2026-08-27).
+# Titles, descriptions, task IDs, and source URLs are stakeholder-supplied.
+# Schema fields not in the source follow SAD SA-16.
+task_set: it_provisioning_tasks
+catalog_version: "1.0.0-developer"
+tasks:
+  - task_id: IT-001
+    title: Set up laptop
+    description: Receive company laptop and complete initial setup with IT.
+    task_set: it_provisioning_tasks
+    category: IT_PROVISIONING
+    applicable_roles:
+      - Developer
+    applicable_departments:
+      - "*"
+    mandatory: true
+    allowed_buckets:
+      - 30
+    source_reference: https://intranet.example.com/it/laptop-setup
+    active: true
+    version: "1.0"
+
+  - task_id: IT-002
+    title: Set up company email and calendar
+    description: Activate company email account and configure calendar access.
+    task_set: it_provisioning_tasks
+    category: IT_PROVISIONING
+    applicable_roles:
+      - Developer
+    applicable_departments:
+      - "*"
+    mandatory: true
+    allowed_buckets:
+      - 30
+    source_reference: https://intranet.example.com/it/email-setup
+    active: true
+    version: "1.0"
+
+  - task_id: IT-003
+    title: Set up GitHub access and SSH keys
+    description: Request access to the engineering GitHub org, generate an SSH key pair, and add the public key to GitHub.
+    task_set: it_provisioning_tasks
+    category: IT_PROVISIONING
+    applicable_roles:
+      - Developer
+    applicable_departments:
+      - "*"
+    mandatory: true
+    allowed_buckets:
+      - 30
+    source_reference: https://intranet.example.com/eng/github-access
+    active: true
+    version: "1.0"
+
+  - task_id: IT-004
+    title: Set up Slack and join team channels
+    description: Install Slack, join the company workspace, and join relevant engineering channels.
+    task_set: it_provisioning_tasks
+    category: IT_PROVISIONING
+    applicable_roles:
+      - Developer
+    applicable_departments:
+      - "*"
+    mandatory: true
+    allowed_buckets:
+      - 30
+    source_reference: https://intranet.example.com/it/slack-setup
+    active: true
+    version: "1.0"

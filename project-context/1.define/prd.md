@@ -233,7 +233,7 @@ Required checks: mandatory compliance coverage; mandatory provisioning coverage;
 
 ## Authoritative Task-Set Model
 
-The onboarding task catalog has not been supplied as approved content. This PRD defines **interfaces and placeholders only**. Development agents MUST NOT populate placeholders with model-generated onboarding tasks.
+The onboarding task catalog is **not fully approved**. **Developer** content is stakeholder-supplied (SAD SD-9). Other role sets remain placeholders. Development agents MUST NOT populate placeholders with model-generated onboarding tasks.
 
 Required placeholder task sets (YAML, one file per set — SD-2):
 
@@ -485,7 +485,7 @@ Explicit Future Work — not MVP:
 * dynamic/catalog task invention by agents
 * legal/compliance inference beyond the catalog
 * performance evaluation or employment decisions
-* web/chat UI (`aamad.config.yml` UI theme/visual_style apply only if a UI is later scoped)
+* rich chat UI, extra screens, pause/cancel (`aamad.config.yml` UI theme/visual_style still unused). **SD-10 (2026-08-27)** added a minimal form + results UI wrapping the CLI/API core; that wrap is in scope. Rich chat remains Future Work.
 * JSON result alongside Markdown
 * dry-run mode, catalog lint CLI, plan-diff across catalog versions
 * alternative Markdown templates / `--verbose`
@@ -624,7 +624,7 @@ Ramp-time cannot be proven by unit tests. Validation requires a pilot with a per
 11. Adapter interfaces for future HRIS/IdP
 12. Security assessment (`security.md`) before Deliver
 
-Follow the modular AAMAD build sequence: core configuration → API/runtime → frontend/CLI UX → validation. CLI is the MVP “frontend”; a chat UI epic is out of scope.
+Follow the modular AAMAD build sequence: core configuration → API/runtime → frontend/CLI UX → validation. CLI `onboard` remains the underlying interface. SD-10 adds a single-screen UI at `src/onboarding-ui/` that calls the same core; a chat UI epic remains out of scope.
 
 **Phase 3 — Deliver**
 
@@ -632,7 +632,7 @@ Deploy configs, runbook, and user guide (`documentation.require_user_guide: true
 
 ## Resource Requirements
 
-Exact staffing, calendar, and budget are TBD (MRD A9). MVP needs: product owner for catalog approval, backend/runtime engineer, test coverage, and security review. No frontend engineer is required for CLI-only MVP.
+Exact staffing, calendar, and budget are TBD (MRD A9). MVP needs: product owner for catalog approval, backend/runtime engineer, test coverage, and security review. SD-10 adds a small frontend wrap (`src/onboarding-ui/`); it does not replace the CLI.
 
 ## Risk Mitigation
 
@@ -726,7 +726,7 @@ No competitor revenue or market-size figures are used as product requirements.
 
 **A1 — Ramp baseline.** Manual onboarding ramp time is assumed to be **three weeks**. This is not measured organizational data. The 30% reduction target is stakeholder-defined, not an external benchmark.
 
-**A2 — Task catalogs.** The approved task catalog will be supplied before production acceptance. Current task sets are placeholders only.
+**A2 — Task catalogs.** Production acceptance still requires approved catalogs for all five roles. **Developer** content is supplied (SAD SD-9). Other task sets remain placeholders. Development agents MUST NOT invent catalog tasks.
 
 **A3 — Department behavior.** Department is a required input and is recorded on outputs. For MVP it does not filter task applicability (SD-7). Future department-specific tasks remain unspecified.
 
@@ -740,7 +740,7 @@ No competitor revenue or market-size figures are used as product requirements.
 
 **A8 — Runtime resolution.** `AAMAD_TARGET_RUNTIME` was unset; `aamad.config.yml` `runtime.target: crewai` is the resolved adapter. Product definition remains the workflow/catalog contract.
 
-**A9 — UI config.** Visual UI settings in `aamad.config.yml` are unused for CLI MVP.
+**A9 — UI config.** Visual UI settings in `aamad.config.yml` are unused. SD-10 is a minimal form + results wrap, not a themed chat product.
 
 **A10 — No additional quantitative market, cost, performance, throughput, or staffing figures** are assumed beyond A1.
 
@@ -781,3 +781,12 @@ Resolved since the 2026-08-09 PRD and therefore **not** repeated as open: LLM pr
 **Prompt Trace:** Omitted — this artifact is a Define-phase requirements document, not a production model run; no prompts were executed against a live LLM API to populate catalog content
 **Context boundary:** Approved for architecture/build handoff with the explicit constraint that development agents must not invent task-catalog contents
 **Template compliance:** Headings aligned to `.cursor/templates/prd-template.md` (Executive Summary through Launch, plus Quality Assurance Checklist, Sources, Assumptions, Open Questions, Audit)
+
+---
+
+## Audit (sync-docs 2026-08-28)
+
+**Timestamp:** 2026-08-28
+**Persona ID:** `project-mgr` (operator requested documentation sync)
+**Action:** `sync-docs`
+**What changed:** P2 web/chat bullet, §8 build sequence, Resource Requirements, and A9 updated for SD-10 (`src/onboarding-ui/` wrap). CLI remains the underlying interface. A2 / catalog note: Developer content supplied; other roles still placeholders. Catalog-invention constraint unchanged.

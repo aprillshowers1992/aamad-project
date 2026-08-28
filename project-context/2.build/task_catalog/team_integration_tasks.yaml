@@ -1,0 +1,53 @@
+# Normalized from project-context/2.build/developer-tasks.yaml (operator 2026-08-27).
+# Titles, descriptions, task IDs, and source URLs are stakeholder-supplied.
+# Schema fields not in the source follow SAD SA-16.
+task_set: team_integration_tasks
+catalog_version: "1.0.0-developer"
+tasks:
+  - task_id: TEAM-001
+    title: Meet with manager
+    description: Schedule and attend an introductory 1:1 with your direct manager.
+    task_set: team_integration_tasks
+    category: TEAM_INTEGRATION
+    applicable_roles:
+      - Developer
+    applicable_departments:
+      - "*"
+    mandatory: true
+    allowed_buckets:
+      - 30
+    source_reference: https://intranet.example.com/onboarding/manager-1-1
+    active: true
+    version: "1.0"
+
+  - task_id: TEAM-002
+    title: Meet with immediate teammates
+    description: Schedule short 1:1 introductions with each member of your immediate team.
+    task_set: team_integration_tasks
+    category: TEAM_INTEGRATION
+    applicable_roles:
+      - Developer
+    applicable_departments:
+      - "*"
+    mandatory: true
+    allowed_buckets:
+      - 30
+    source_reference: https://intranet.example.com/onboarding/team-intros
+    active: true
+    version: "1.0"
+
+  - task_id: TEAM-003
+    title: Attend first team standup
+    description: Join the team's daily standup meeting for the first time.
+    task_set: team_integration_tasks
+    category: TEAM_INTEGRATION
+    applicable_roles:
+      - Developer
+    applicable_departments:
+      - "*"
+    mandatory: true
+    allowed_buckets:
+      - 30
+    source_reference: https://intranet.example.com/onboarding/standup-info
+    active: true
+    version: "1.0"

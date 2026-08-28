@@ -1,0 +1,5 @@
+# Development-only placeholder. No stakeholder tasks supplied for this set.
+# SHALL NOT be treated as production-valid for roles other than Developer (FR-015).
+task_set: shared_tasks
+catalog_version: "0.0.0-placeholder"
+tasks: []

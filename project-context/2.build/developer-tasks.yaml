@@ -1,0 +1,96 @@
+# Stakeholder source snapshot (operator 2026-08-27). Compact field names.
+# Loaded by onboarding.catalog.load_developer_catalog (Task / TaskCatalog).
+tasks:
+  # --- Compliance ---
+  - id: COMP-001
+    title: Sign employment agreement
+    description: Review and sign the offer letter / employment agreement acknowledgment.
+    category: compliance
+    source: https://intranet.example.com/hr/employment-agreement
+
+  - id: COMP-002
+    title: Complete code of conduct training
+    description: Finish the required code of conduct and ethics training module in the HR system.
+    category: compliance
+    source: https://intranet.example.com/training/code-of-conduct
+
+  - id: COMP-003
+    title: Complete security awareness training
+    description: Finish training on phishing recognition, data handling, and information security basics.
+    category: compliance
+    source: https://intranet.example.com/training/security-awareness
+
+  - id: COMP-004
+    title: Sign NDA and IP assignment agreement
+    description: Review and sign the non-disclosure agreement and intellectual property assignment.
+    category: compliance
+    source: https://intranet.example.com/legal/nda-ip-agreement
+
+  # --- IT Setup ---
+  - id: IT-001
+    title: Set up laptop
+    description: Receive company laptop and complete initial setup with IT.
+    category: it_setup
+    source: https://intranet.example.com/it/laptop-setup
+
+  - id: IT-002
+    title: Set up company email and calendar
+    description: Activate company email account and configure calendar access.
+    category: it_setup
+    source: https://intranet.example.com/it/email-setup
+
+  - id: IT-003
+    title: Set up GitHub access and SSH keys
+    description: Request access to the engineering GitHub org, generate an SSH key pair, and add the public key to GitHub.
+    category: it_setup
+    source: https://intranet.example.com/eng/github-access
+
+  - id: IT-004
+    title: Set up Slack and join team channels
+    description: Install Slack, join the company workspace, and join relevant engineering channels.
+    category: it_setup
+    source: https://intranet.example.com/it/slack-setup
+
+  # --- Role Work ---
+  - id: ROLE-001
+    title: Clone main repo and run locally
+    description: Clone the primary engineering repository and get the local development environment running.
+    category: role_work
+    source: https://intranet.example.com/eng/getting-started
+
+  - id: ROLE-002
+    title: Read architecture and onboarding docs
+    description: Review the team's architecture overview and engineering onboarding documentation.
+    category: role_work
+    source: https://intranet.example.com/eng/architecture-docs
+
+  - id: ROLE-003
+    title: Complete first pull request
+    description: Pick up a small, low-risk starter ticket and submit a first pull request for review.
+    category: role_work
+    source: https://intranet.example.com/eng/first-pr-guide
+
+  - id: ROLE-004
+    title: Review team coding standards
+    description: Read through the team's style guide and code review expectations.
+    category: role_work
+    source: https://intranet.example.com/eng/coding-standards
+
+  # --- Team Intro ---
+  - id: TEAM-001
+    title: Meet with manager
+    description: Schedule and attend an introductory 1:1 with your direct manager.
+    category: team_intro
+    source: https://intranet.example.com/onboarding/manager-1-1
+
+  - id: TEAM-002
+    title: Meet with immediate teammates
+    description: Schedule short 1:1 introductions with each member of your immediate team.
+    category: team_intro
+    source: https://intranet.example.com/onboarding/team-intros
+
+  - id: TEAM-003
+    title: Attend first team standup
+    description: Join the team's daily standup meeting for the first time.
+    category: team_intro
+    source: https://intranet.example.com/onboarding/standup-info

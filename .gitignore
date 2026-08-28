@@ -16,6 +16,12 @@ __pycache__/
 node_modules/
 dist/
 build/
+.tools/
+playwright-report/
+test-results/
+blob-report/
+src/frontend/playwright-report/
+src/frontend/test-results/
 
 # OS and editor
 .DS_Store
@@ -25,3 +31,6 @@ Thumbs.db
 # Logs
 *.log
 project-context/2.build/logs/
+
+# Generated onboarding Markdown (SAD SD-3)
+output/

@@ -1,0 +1,6 @@
+# Development-only placeholder. No stakeholder tasks supplied for this set.
+# Engineer is distinct from Developer (SD-5). Do not reuse developer_tasks.yaml.
+# SHALL NOT be treated as production-valid (FR-015).
+task_set: engineer_tasks
+catalog_version: "0.0.0-placeholder"
+tasks: []

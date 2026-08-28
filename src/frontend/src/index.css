@@ -1,0 +1,302 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f4f1ea;
+  --surface: #fffdf8;
+  --ink: #1c1916;
+  --muted: #5c564e;
+  --line: #d8d0c4;
+  --accent: #2f4f4f;
+  --accent-ink: #f4f1ea;
+  --idle: #6b6358;
+  --running: #8a5a12;
+  --done: #2f5d3a;
+  --error: #8b2e2e;
+  --focus: #0b57d0;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161411;
+    --surface: #221e19;
+    --ink: #f3eee6;
+    --muted: #b7afa4;
+    --line: #3a342c;
+    --accent: #9ec3b8;
+    --accent-ink: #161411;
+    --idle: #c4b8a8;
+    --running: #e0b36a;
+    --done: #8fca9d;
+    --error: #f0a0a0;
+    --focus: #8ab4ff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  font-size: 0.85em;
+}
+
+.page {
+  position: relative;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 1.25rem;
+  z-index: 2;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  left: 1.25rem;
+}
+
+button:focus,
+button:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible,
+.skip-link:focus,
+.skip-link:focus-visible,
+#main-content:focus,
+#main-content:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--focus);
+}
+
+.status-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.9rem;
+  margin-bottom: 1.25rem;
+  padding: 0.7rem 0.95rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.status-pill {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.status-pill-idle {
+  background: #8d8d8d;
+}
+
+.status-pill-running {
+  background: #2f6fed;
+}
+
+.status-pill-done {
+  background: #2e8b4f;
+}
+
+.status-pill-error {
+  background: #d12b2b;
+}
+
+.last-updated {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-left: auto;
+}
+
+.hero {
+  margin-bottom: 1.75rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 880px) {
+  .layout {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.column {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.15rem 1.2rem 1.25rem;
+}
+
+.lede,
+.muted {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.stack {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field span {
+  font-size: 0.9rem;
+}
+
+textarea,
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  padding: 0.55rem 0.65rem;
+}
+
+textarea:disabled,
+select:disabled,
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+button {
+  appearance: none;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.meta {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem;
+}
+
+.meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.meta dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.meta dd {
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.8rem;
+  border: 1px solid currentColor;
+}
+
+.badge-idle {
+  color: var(--idle);
+}
+
+.badge-running {
+  color: var(--run

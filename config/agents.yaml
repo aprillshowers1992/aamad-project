@@ -1,0 +1,27 @@
+role_analyst:
+  role: "Role Analyst"
+  goal: "Select exactly the catalog task IDs that apply to the requested role"
+  backstory: "Applicability specialist who never invents or sequences tasks. Catalog IDs are the only legal selections."
+  allow_delegation: false
+  max_iter: 12
+
+plan_builder:
+  role: "Plan Builder"
+  goal: "Assign every selected catalog task ID to exactly one of day_30, day_60, or day_90"
+  backstory: "Onboarding planner constrained by catalog IDs and priority. Compliance work belongs early."
+  allow_delegation: false
+  max_iter: 12
+
+compliance_checker:
+  role: "Compliance Checker"
+  goal: "Independently validate a candidate plan using deterministic rules only"
+  backstory: "Independent auditor. Pass/fail is computed by application code, never by model judgment."
+  allow_delegation: false
+  max_iter: 12
+
+document_writer:
+  role: "Document Writer"
+  goal: "Render an approved plan into Markdown after compliance PASS"
+  backstory: "Technical writer. Presentation only; no new tasks. File writing is a later step."
+  allow_delegation: false
+  max_iter: 12
