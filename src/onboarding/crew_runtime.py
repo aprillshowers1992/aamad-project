@@ -204,6 +204,7 @@ def _kickoff(
         process=Process.sequential,
         memory=False,
         verbose=False,
+        max_execution_time=280,
     )
     return crew.kickoff(inputs=inputs)
 

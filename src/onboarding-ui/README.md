@@ -1,4 +1,4 @@
-# Onboarding plan UI
+# Catalog-Gated 30/60/90 Onboarding Crew (UI)
 
 Single-route Vite + React + TypeScript app for the **Automated Employee Onboarding Workflow**. It wraps the existing CLI/API core (`src/onboarding/`) and is **not** the Critical Research Workflow prototype in `src/frontend/`.
 

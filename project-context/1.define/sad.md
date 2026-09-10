@@ -1001,6 +1001,7 @@ TASK_IDS_IN_USER_BODY = false (appendix only)
 - [x] Handoff schemas aligned to 2026-08-20 PRD §3 field lists
 - [x] Task catalog **content** for Developer supplied (SD-9; 15 tasks)
 - [ ] Task catalog **content** for UI Designer, UX Researcher, Product Manager, Engineer (and any shared tasks) still placeholder
+- [ ] Catalog version field: specified in PRD/SAD, not yet implemented in audit appendix
 - [ ] Security assessment (`@security.eng`) — Build/Deliver phase
 - [ ] User guide (`@devops.eng`) — Deliver phase
 

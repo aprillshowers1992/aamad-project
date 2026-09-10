@@ -234,6 +234,12 @@ textarea {
   padding: 0.55rem 0.65rem;
 }
 
+select,
+select option {
+  color: #000;
+  background-color: #fff;
+}
+
 input:disabled,
 select:disabled,
 textarea:disabled,

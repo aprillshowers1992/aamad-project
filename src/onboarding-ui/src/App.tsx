@@ -19,7 +19,7 @@ const TIMEOUT_ERROR_MESSAGE = "This is taking longer than expected";
 function trimInput(input: OnboardingFormInput): OnboardingFormInput {
   return {
     role: input.role,
-    department: input.department.trim(),
+    department: input.department,
     startDate: input.startDate,
   };
 }
@@ -190,8 +190,8 @@ export default function App() {
       </a>
       <StatusBanner phase={phase} lastUpdated={lastUpdated} />
       <header className="hero">
-        <p className="eyebrow">Onboarding plan · wraps CLI core</p>
-        <h1>Onboarding plan</h1>
+        <p className="eyebrow">Catalog-gated crew · wraps CLI core</p>
+        <h1>Catalog-Gated 30/60/90 Onboarding Crew</h1>
         <p>
           Enter role, department, and start date. The UI calls the existing onboarding
           API and shows the generated Markdown when compliance passes.

@@ -1,6 +1,6 @@
-# Automated Employee Onboarding Workflow
+# Catalog-Gated 30/60/90 Onboarding Crew
 
-Internal AI Engineering tool that generates **catalog-grounded** 30/60/90-day onboarding plans and manager checklists for five roles. The system selects, sequences, and validates tasks from an authoritative catalog rather than inventing work.
+Internal AI Engineering tool (**Automated Employee Onboarding Workflow**) that generates **catalog-grounded** 30/60/90-day onboarding plans and manager checklists. Runnable scope is Developer only; UI Designer, UX Researcher, Product Manager, and Engineer remain catalog placeholders and future work. The system selects, sequences, and validates tasks from an authoritative catalog rather than inventing work.
 
 This repository is a product project built with the AAMAD framework 0.7.5 (Define → Build → Deliver). Source: [aprillshowers1992/aamad-project](https://github.com/aprillshowers1992/aamad-project).
 
@@ -18,7 +18,7 @@ This repository is a product project built with the AAMAD framework 0.7.5 (Defin
 | Onboarding HTTP spec | [`project-context/1.define/onboarding-backend-spec.md`](project-context/1.define/onboarding-backend-spec.md) | Implemented (`src/onboarding/api.py`) |
 | Backend / frontend / QA / security / deploy | `project-context/2.build/*.md`, `project-context/3.deliver/` | Not yet written as epic artifacts |
 
-**Resolved runtime:** CrewAI (`aamad.config.yml` `runtime.target: crewai`). **Language:** Python 3.11+. **Interfaces:** CLI `onboard` (SD-6) and a minimal UI that wraps the same core (SD-10). **LLM:** OpenAI `gpt-4o` via `OPENAI_API_KEY` (optional; catalog stubs run without a key).
+**Resolved runtime:** CrewAI (`aamad.config.yml` `runtime.target: crewai`). **Language:** Python 3.11+. **Interfaces:** CLI `onboard` (SD-6) and a minimal UI that wraps the same core (SD-10). **LLM:** OpenAI `gpt-4o` via `OPENAI_API_KEY` (optional; catalog stubs run without a key); `GEMINI_API_KEY` is an alternate provider, and OpenAI is used if both are set.
 
 **Catalog:** Developer content is supplied. UI Designer, UX Researcher, Product Manager, Engineer, and shared sets remain placeholders — do not fill them with model-generated tasks.
 

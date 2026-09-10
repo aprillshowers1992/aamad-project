@@ -1,6 +1,8 @@
 import {
+  CANONICAL_DEPARTMENTS,
   CANONICAL_ROLES,
   CATALOG_ROLE,
+  type CanonicalDepartment,
   type CanonicalRole,
   type OnboardingFormInput,
 } from "../types";
@@ -27,8 +29,10 @@ export function validateInputs(input: OnboardingFormInput): string | null {
   if (input.role !== CATALOG_ROLE) {
     return unsupportedRoleMessage(input.role);
   }
-  if (!input.department.trim()) {
-    return "Department must be non-empty.";
+  if (
+    !CANONICAL_DEPARTMENTS.includes(input.department as CanonicalDepartment)
+  ) {
+    return "Department must be one of the listed values.";
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.startDate)) {
     return "Start date must be a valid calendar date in YYYY-MM-DD format.";
@@ -72,18 +76,27 @@ export function InputsSection({
         </label>
         <label className="field" htmlFor="onboarding-department">
           <span>Department</span>
-          <input
+          <select
             id="onboarding-department"
             name="department"
-            type="text"
             required
             disabled={disabled}
             value={value.department}
             aria-invalid={validationError ? true : undefined}
             onChange={(event) =>
-              onChange({ ...value, department: event.target.value })
+              onChange({
+                ...value,
+                department: event.target.value as CanonicalDepartment | "",
+              })
             }
-          />
+          >
+            <option value="">Select department</option>
+            {CANONICAL_DEPARTMENTS.map((department) => (
+              <option key={department} value={department}>
+                {department}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="field" htmlFor="onboarding-start-date">
           <span>Start date</span>
