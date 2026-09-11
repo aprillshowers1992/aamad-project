@@ -367,3 +367,14 @@ button.secondary {
 .markdown-body ol {
   padding-left: 1.2rem;
 }
+
+.markdown-body input[type="checkbox"] {
+  width: auto;
+  height: 1rem;
+  margin: 0 0.45rem 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
